@@ -297,7 +297,7 @@ textarea:focus {
   }
 
   .container {
-    padding: var(--spacing-md);
+    padding: 0 var(--spacing-sm);
   }
 
   /* Nav header */
@@ -326,10 +326,10 @@ textarea:focus {
     font-size: 0.8rem;
   }
 
-  /* Glass cards */
+  /* Glass cards — edge-to-edge on mobile */
   .glass-card {
     padding: var(--spacing-md);
-    border-radius: var(--radius-md);
+    border-radius: var(--radius-sm);
   }
 
   .btn {
@@ -353,26 +353,20 @@ textarea:focus {
     grid-template-columns: 1fr !important;
   }
 
+  /* Pinch-to-zoom table map */
   .table-view-grid .table-map-card {
-    height: auto !important;
-    min-height: 400px;
-    overflow-x: auto;
-    overflow-y: hidden;
-    -webkit-overflow-scrolling: touch;
-  }
-
-  .table-view-grid .table-map-card #customer-tables-container {
-    min-width: 500px;
-    position: relative !important;
-    inset: unset !important;
-    padding: 60px 20px 20px;
-    height: 400px;
+    height: 450px !important;
+    border-radius: 0 !important;
+    margin: 0 calc(-1 * var(--spacing-sm));
+    width: calc(100% + 2 * var(--spacing-sm));
+    touch-action: pan-x pan-y pinch-zoom;
+    overflow: hidden;
   }
 
   .table-select {
-    width: 40px !important;
-    height: 40px !important;
-    font-size: 0.75rem !important;
+    width: 42px !important;
+    height: 42px !important;
+    font-size: 0.8rem !important;
     border-radius: 10px !important;
   }
 

@@ -141,7 +141,7 @@ export default class ZoneMap {
     }).join('')}
             </div>
           </div>
-          <p class="swipe-hint" style="display: none; text-align: center; color: var(--text-dim); font-size: 0.75rem; padding: 8px 0; opacity: 0.7;">👆 เลื่อนซ้าย-ขวาเพื่อดูโต๊ะทั้งหมด</p>
+          <p class="swipe-hint" style="display: none; text-align: center; color: var(--text-dim); font-size: 0.75rem; padding: 8px 0; opacity: 0.7;">👆 ใช้ปุ่ม +/− หรือบีบนิ้วเพื่อซูม</p>
 
           <div id="table-confirm-panel">
             <div class="glass-card" style="padding: var(--spacing-xl); border-color: ${this.selectedTable ? 'var(--primary)' : 'var(--glass-border)'}; transition: all 0.3s ease;">
@@ -204,6 +204,77 @@ export default class ZoneMap {
     `;
 
     this.attachTableEvents(container);
+    this.initZoom(container);
+  }
+
+  initZoom(container) {
+    const mapCard = container.querySelector('.table-map-card');
+    if (!mapCard) return;
+
+    const tablesContainer = mapCard.querySelector('#customer-tables-container');
+    if (!tablesContainer) return;
+
+    let scale = 1;
+    const minScale = 0.8;
+    const maxScale = 2;
+
+    // Add zoom controls
+    const zoomControls = document.createElement('div');
+    zoomControls.className = 'zoom-controls';
+    zoomControls.innerHTML = `
+      <button class="zoom-btn" id="zoom-in" style="width: 36px; height: 36px; border-radius: 50%; border: 1px solid var(--glass-border); background: var(--bg-surface); color: white; font-size: 1.2rem; cursor: pointer; display: flex; align-items: center; justify-content: center;">+</button>
+      <span class="zoom-level" style="font-size: 0.7rem; color: var(--text-dim); font-family: 'Outfit'; min-width: 40px; text-align: center;">100%</span>
+      <button class="zoom-btn" id="zoom-out" style="width: 36px; height: 36px; border-radius: 50%; border: 1px solid var(--glass-border); background: var(--bg-surface); color: white; font-size: 1.2rem; cursor: pointer; display: flex; align-items: center; justify-content: center;">−</button>
+    `;
+    zoomControls.style.cssText = 'position: absolute; bottom: 12px; right: 12px; z-index: 30; display: flex; flex-direction: column; align-items: center; gap: 4px; background: rgba(0,0,0,0.6); backdrop-filter: blur(8px); padding: 8px; border-radius: 24px;';
+    mapCard.appendChild(zoomControls);
+
+    const zoomLabel = zoomControls.querySelector('.zoom-level');
+
+    const applyZoom = () => {
+      tablesContainer.style.transform = `scale(${scale})`;
+      tablesContainer.style.transformOrigin = 'center center';
+      zoomLabel.textContent = `${Math.round(scale * 100)}%`;
+    };
+
+    zoomControls.querySelector('#zoom-in').addEventListener('click', (e) => {
+      e.stopPropagation();
+      scale = Math.min(maxScale, scale + 0.2);
+      applyZoom();
+    });
+
+    zoomControls.querySelector('#zoom-out').addEventListener('click', (e) => {
+      e.stopPropagation();
+      scale = Math.max(minScale, scale - 0.2);
+      applyZoom();
+    });
+
+    // Pinch-to-zoom
+    let initialDistance = 0;
+    let initialScale = 1;
+
+    mapCard.addEventListener('touchstart', (e) => {
+      if (e.touches.length === 2) {
+        e.preventDefault();
+        initialDistance = Math.hypot(
+          e.touches[0].clientX - e.touches[1].clientX,
+          e.touches[0].clientY - e.touches[1].clientY
+        );
+        initialScale = scale;
+      }
+    }, { passive: false });
+
+    mapCard.addEventListener('touchmove', (e) => {
+      if (e.touches.length === 2) {
+        e.preventDefault();
+        const dist = Math.hypot(
+          e.touches[0].clientX - e.touches[1].clientX,
+          e.touches[0].clientY - e.touches[1].clientY
+        );
+        scale = Math.min(maxScale, Math.max(minScale, initialScale * (dist / initialDistance)));
+        applyZoom();
+      }
+    }, { passive: false });
   }
 
   attachZoneEvents(container) {
