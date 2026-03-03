@@ -175,27 +175,29 @@ export default class ZoneMap {
 
       <style>
         .table-select {
-          width: 50px;
-          height: 50px;
-          border-radius: 14px;
+          width: 48px;
+          height: 48px;
+          border-radius: 50%;
           display: flex;
           align-items: center;
           justify-content: center;
           color: white;
           font-weight: 800;
+          font-size: 0.85rem;
           font-family: 'Outfit', sans-serif;
           transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-          border: 1px solid rgba(255,255,255,0.1);
+          border: 2px solid rgba(255,255,255,0.1);
+          user-select: none;
         }
         .table-select:hover:not(.booked):not(.other-zone) { 
-          transform: scale(1.15) translateY(-5px); 
-          box-shadow: 0 12px 24px rgba(0,0,0,0.5) !important; 
+          transform: scale(1.15); 
+          box-shadow: 0 0 20px rgba(255,255,255,0.2), 0 8px 15px rgba(0,0,0,0.5) !important; 
           z-index: 10;
           border-color: rgba(255,255,255,0.3);
         }
         .table-select.active { 
           border: 3px solid white; 
-          transform: scale(1.25); 
+          transform: scale(1.2); 
           box-shadow: 0 0 25px var(--accent-neon) !important; 
           z-index: 20;
           opacity: 1 !important;
