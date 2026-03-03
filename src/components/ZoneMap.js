@@ -117,7 +117,7 @@ export default class ZoneMap {
 
         <div class="table-view-grid" style="display: grid; grid-template-columns: 1fr 380px; gap: var(--spacing-xl); align-items: start;">
           <div class="glass-card canvas-grid-bg table-map-card" style="position: relative; height: 650px; background: var(--bg-surface); overflow: hidden; border: 1px solid var(--glass-border); box-shadow: inset 0 0 50px rgba(0,0,0,0.5);">
-            <div style="position: absolute; top: 40px; left: 50%; transform: translateX(-50%); width: 400px; height: 80px; background: rgba(0, 255, 255, 0.05); border: 2px solid var(--accent-neon); border-radius: 12px; display: flex; flex-direction: column; align-items: center; justify-content: center; color: var(--accent-neon); font-weight: 800; font-family: 'Outfit', sans-serif; box-shadow: 0 0 30px rgba(0, 255, 255, 0.2), inset 0 0 15px rgba(0, 255, 255, 0.1); letter-spacing: 0.2rem;">
+            <div style="position: absolute; top: 40px; left: 50%; transform: translateX(-50%); width: 50%; max-width: 400px; height: 80px; background: rgba(0, 255, 255, 0.05); border: 2px solid var(--accent-neon); border-radius: 12px; display: flex; flex-direction: column; align-items: center; justify-content: center; color: var(--accent-neon); font-weight: 800; font-family: 'Outfit', sans-serif; box-shadow: 0 0 30px rgba(0, 255, 255, 0.2), inset 0 0 15px rgba(0, 255, 255, 0.1); letter-spacing: 0.2rem;">
               <div style="font-size: 1.2rem;">STAGE</div>
               <div style="font-size: 0.8rem; opacity: 0.7; font-weight: 500;">เวทีการแสดง</div>
             </div>
