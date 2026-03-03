@@ -10,6 +10,7 @@ export default class ZoneMap {
     this.selectedZone = null;
     this.selectedTable = null;
     this.viewMode = 'zones'; // 'zones' or 'tables'
+    this.currentScale = 1; // Persist zoom across re-renders
   }
 
   async render(container) {
@@ -117,7 +118,7 @@ export default class ZoneMap {
 
         <div class="table-view-grid" style="display: grid; grid-template-columns: 1fr 380px; gap: var(--spacing-xl); align-items: start;">
           <div class="glass-card canvas-grid-bg table-map-card" style="position: relative; height: 650px; background: var(--bg-surface); overflow: hidden; border: 1px solid var(--glass-border); box-shadow: inset 0 0 50px rgba(0,0,0,0.5);">
-            <div style="position: absolute; top: 40px; left: 50%; transform: translateX(-50%); width: 50%; max-width: 400px; height: 80px; background: rgba(0, 255, 255, 0.05); border: 2px solid var(--accent-neon); border-radius: 12px; display: flex; flex-direction: column; align-items: center; justify-content: center; color: var(--accent-neon); font-weight: 800; font-family: 'Outfit', sans-serif; box-shadow: 0 0 30px rgba(0, 255, 255, 0.2), inset 0 0 15px rgba(0, 255, 255, 0.1); letter-spacing: 0.2rem;">
+            <div class="stage-element">
               <div style="font-size: 1.2rem;">STAGE</div>
               <div style="font-size: 0.8rem; opacity: 0.7; font-weight: 500;">เวทีการแสดง</div>
             </div>
@@ -177,6 +178,30 @@ export default class ZoneMap {
       </div>
 
       <style>
+        .stage-element {
+          position: absolute;
+          top: 40px;
+          left: 50%;
+          transform: translateX(-50%);
+          width: 50%;
+          max-width: 400px;
+          height: 80px;
+          background: rgba(0, 255, 255, 0.05);
+          border: 2px solid var(--accent-neon);
+          border-radius: 12px;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          color: var(--accent-neon);
+          font-weight: 800;
+          font-family: 'Outfit', sans-serif;
+          box-shadow: 0 0 30px rgba(0, 255, 255, 0.2), inset 0 0 15px rgba(0, 255, 255, 0.1);
+          letter-spacing: 0.2rem;
+          z-index: 5;
+          pointer-events: none;
+        }
+
         .table-select {
           width: 48px;
           height: 48px;
@@ -205,6 +230,37 @@ export default class ZoneMap {
           z-index: 20;
           opacity: 1 !important;
         }
+
+        .zoom-controls {
+          position: absolute;
+          bottom: 12px;
+          right: 12px;
+          z-index: 30;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 4px;
+          background: rgba(0,0,0,0.6);
+          backdrop-filter: blur(8px);
+          padding: 8px;
+          border-radius: 24px;
+        }
+        .zoom-btn {
+          width: 36px;
+          height: 36px;
+          border-radius: 50%;
+          border: 1px solid var(--glass-border);
+          background: var(--bg-surface);
+          color: white;
+          font-size: 1.2rem;
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+        .zoom-btn:active {
+          transform: scale(0.9);
+        }
       </style>
     `;
 
@@ -219,7 +275,7 @@ export default class ZoneMap {
     const tablesContainer = mapCard.querySelector('#customer-tables-container');
     if (!tablesContainer) return;
 
-    let scale = 1;
+    let scale = this.currentScale;
     const minScale = 0.8;
     const maxScale = 2;
 
@@ -227,11 +283,10 @@ export default class ZoneMap {
     const zoomControls = document.createElement('div');
     zoomControls.className = 'zoom-controls';
     zoomControls.innerHTML = `
-      <button class="zoom-btn" id="zoom-in" style="width: 36px; height: 36px; border-radius: 50%; border: 1px solid var(--glass-border); background: var(--bg-surface); color: white; font-size: 1.2rem; cursor: pointer; display: flex; align-items: center; justify-content: center;">+</button>
-      <span class="zoom-level" style="font-size: 0.7rem; color: var(--text-dim); font-family: 'Outfit'; min-width: 40px; text-align: center;">100%</span>
-      <button class="zoom-btn" id="zoom-out" style="width: 36px; height: 36px; border-radius: 50%; border: 1px solid var(--glass-border); background: var(--bg-surface); color: white; font-size: 1.2rem; cursor: pointer; display: flex; align-items: center; justify-content: center;">−</button>
+      <button class="zoom-btn zoom-in-btn">+</button>
+      <span class="zoom-level" style="font-size: 0.7rem; color: var(--text-dim); font-family: 'Outfit'; min-width: 40px; text-align: center;">${Math.round(scale * 100)}%</span>
+      <button class="zoom-btn zoom-out-btn">−</button>
     `;
-    zoomControls.style.cssText = 'position: absolute; bottom: 12px; right: 12px; z-index: 30; display: flex; flex-direction: column; align-items: center; gap: 4px; background: rgba(0,0,0,0.6); backdrop-filter: blur(8px); padding: 8px; border-radius: 24px;';
     mapCard.appendChild(zoomControls);
 
     const zoomLabel = zoomControls.querySelector('.zoom-level');
@@ -240,15 +295,19 @@ export default class ZoneMap {
       tablesContainer.style.transform = `scale(${scale})`;
       tablesContainer.style.transformOrigin = 'center center';
       zoomLabel.textContent = `${Math.round(scale * 100)}%`;
+      this.currentScale = scale; // Persist across re-renders
     };
 
-    zoomControls.querySelector('#zoom-in').addEventListener('click', (e) => {
+    // Apply saved zoom immediately
+    if (scale !== 1) applyZoom();
+
+    zoomControls.querySelector('.zoom-in-btn').addEventListener('click', (e) => {
       e.stopPropagation();
       scale = Math.min(maxScale, scale + 0.2);
       applyZoom();
     });
 
-    zoomControls.querySelector('#zoom-out').addEventListener('click', (e) => {
+    zoomControls.querySelector('.zoom-out-btn').addEventListener('click', (e) => {
       e.stopPropagation();
       scale = Math.max(minScale, scale - 0.2);
       applyZoom();

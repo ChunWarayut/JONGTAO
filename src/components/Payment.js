@@ -48,7 +48,7 @@ export default class Payment {
                 <label class="method-card">
                   <input type="radio" name="method" value="promptpay" checked>
                   <div style="display: flex; align-items: center; gap: 12px; flex-grow: 1;">
-                    <img src="https://upload.wikimedia.org/wikipedia/commons/c/c5/PromptPay-logo.png" alt="PromptPay" style="height: 24px;">
+                    <img src="/src/assets/promptpay-logo.png" alt="PromptPay" style="height: 24px;">
                     <span style="font-weight: 600;">Thai QR PromptPay</span>
                   </div>
                   <div class="check-icon"></div>
