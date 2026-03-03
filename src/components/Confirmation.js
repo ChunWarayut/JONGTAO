@@ -12,7 +12,7 @@ export default class Confirmation {
           <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
         </div>
         
-        <h1 class="font-heading" style="margin-bottom: var(--spacing-xs); font-size: 2.5rem;">${payment.method === 'promptpay' ? 'รับทราบการจ่ายเงิน!' : 'จองโต๊ะสำเร็จ!'}</h1>
+        <h1 class="font-heading confirmation-heading" style="margin-bottom: var(--spacing-xs); font-size: 2.5rem;">${payment.method === 'promptpay' ? 'รับทราบการจ่ายเงิน!' : 'จองโต๊ะสำเร็จ!'}</h1>
         <p style="color: var(--text-dim); margin-bottom: var(--spacing-xl); font-weight: 500;">
           ${payment.method === 'promptpay'
         ? 'เรากำลังรอยืนยันยอดเงินจาก Stripe... เมื่อสำเร็จ ระบบจะอัปเดตสถานะทันที'
@@ -31,7 +31,7 @@ export default class Confirmation {
           </div>
           <div style="padding: var(--spacing-xl); text-align: left; background: var(--bg-surface); border-top: 1px solid var(--glass-border);">
             <p class="font-heading" style="font-size: 0.85rem; color: var(--text-dim); margin-bottom: var(--spacing-md); text-transform: uppercase; letter-spacing: 0.1em;">สรุปรายการจอง</p>
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; font-size: 1rem;">
+            <div class="confirmation-summary-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; font-size: 1rem;">
               <div style="display: flex; align-items: center; gap: 10px; grid-column: span 2; border-bottom: 1px dashed rgba(255,255,255,0.1); padding-bottom: 8px;">
                 <span style="font-size: 1.2rem;">📅</span>
                 <div>
@@ -82,7 +82,7 @@ export default class Confirmation {
           </div>
         </div>
 
-        <div style="display: flex; gap: var(--spacing-md); margin-bottom: 40px;">
+        <div class="confirmation-actions" style="display: flex; gap: var(--spacing-md); margin-bottom: 40px;">
           <button class="btn btn-ghost" style="flex: 1; height: 56px; font-weight: 700;" onclick="if(window.app){ window.app.reservation = window.app.getDefaultReservation(); window.app.goToStep(1); } else { window.location.reload(); }">
             <span>🔄</span> เริ่มใหม่
           </button>

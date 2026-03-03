@@ -18,12 +18,12 @@ export default class GuestCount {
           <p style="color: var(--text-dim); margin-bottom: var(--spacing-xl); font-weight: 500;">สำหรับโซน: <span id="selected-zone-name" style="color: var(--accent-neon); font-weight: 800; font-family: 'Outfit';">${this.reservation.zone.name}</span></p>
           
           <div style="display: flex; align-items: center; justify-content: center; gap: 32px; margin-bottom: var(--spacing-xl); background: rgba(255,255,255,0.02); padding: var(--spacing-lg); border-radius: var(--radius-lg); border: 1px solid var(--glass-border);">
-            <button id="btn-minus" class="btn btn-ghost" style="width: 64px; height: 64px; font-size: 2rem; border-radius: 50%; padding: 0; line-height: 1;">-</button>
+            <button id="btn-minus" class="btn btn-ghost guest-counter-btn" style="width: 64px; height: 64px; font-size: 2rem; border-radius: 50%; padding: 0; line-height: 1;">-</button>
             <div style="display: flex; flex-direction: column; align-items: center;">
-                <span id="guest-count-display" style="font-size: 5rem; font-weight: 800; min-width: 100px; font-family: 'Outfit', sans-serif; line-height: 1; color: var(--text-main);">${this.count}</span>
+                <span id="guest-count-display" class="guest-count-display" style="font-size: 5rem; font-weight: 800; min-width: 100px; font-family: 'Outfit', sans-serif; line-height: 1; color: var(--text-main);">${this.count}</span>
                 <span style="font-size: 0.9rem; color: var(--text-dim); font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em;">GUESTS</span>
             </div>
-            <button id="btn-plus" class="btn btn-ghost" style="width: 64px; height: 64px; font-size: 2rem; border-radius: 50%; padding: 0; line-height: 1;">+</button>
+            <button id="btn-plus" class="btn btn-ghost guest-counter-btn" style="width: 64px; height: 64px; font-size: 2rem; border-radius: 50%; padding: 0; line-height: 1;">+</button>
           </div>
 
           <div id="recommendation-box" style="margin-bottom: var(--spacing-xl); padding: var(--spacing-lg); border-radius: var(--radius-md); background: rgba(255, 255, 255, 0.03); border: 1px solid var(--glass-border); min-height: 80px; display: flex; align-items: center; justify-content: center;">

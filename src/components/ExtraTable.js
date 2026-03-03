@@ -15,12 +15,12 @@ export default class ExtraTable {
           <span style="margin-right: 8px;">←</span> ย้อนกลับ
         </button>
         
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: var(--spacing-xl); align-items: start;">
+        <div class="resp-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: var(--spacing-xl); align-items: start;">
           <div class="glass-card" style="padding: var(--spacing-xl);">
             <h2 class="font-heading" style="margin-bottom: var(--spacing-md); font-size: 1.75rem;">เสริมโต๊ะ (Optional)</h2>
             <p style="color: var(--text-dim); margin-bottom: var(--spacing-xl); font-weight: 500;">คุณต้องการเพิ่มพื้นที่นั่ง (+2 ท่าน) พิเศษหรือไม่?</p>
             
-            <div style="background: rgba(255, 255, 255, 0.03); padding: var(--spacing-lg); border-radius: var(--radius-lg); border: 1px solid var(--glass-border); display: flex; align-items: center; justify-content: space-between; margin-bottom: var(--spacing-xl); transition: border-color 0.3s;" id="extra-table-panel">
+            <div class="extra-table-panel-inner" style="background: rgba(255, 255, 255, 0.03); padding: var(--spacing-lg); border-radius: var(--radius-lg); border: 1px solid var(--glass-border); display: flex; align-items: center; justify-content: space-between; margin-bottom: var(--spacing-xl); transition: border-color 0.3s;" id="extra-table-panel">
               <div style="display: flex; align-items: center; gap: 16px;">
                 <div style="width: 44px; height: 44px; background: rgba(124, 58, 237, 0.1); border-radius: 12px; display: flex; align-items: center; justify-content: center; color: var(--accent-neon);">
                   <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="12" y1="8" x2="12" y2="16"></line><line x1="8" y1="12" x2="16" y2="12"></line></svg>

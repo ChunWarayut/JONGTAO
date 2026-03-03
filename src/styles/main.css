@@ -300,6 +300,14 @@ textarea:focus {
     padding: var(--spacing-md);
   }
 
+  /* Nav header */
+  header nav {
+    flex-wrap: wrap;
+    gap: 12px;
+    padding: 16px 0 !important;
+  }
+
+  /* Stepper */
   .step-label {
     display: none;
   }
@@ -312,18 +320,141 @@ textarea:focus {
     font-size: 0.75rem;
   }
 
+  .step-dot {
+    width: 36px;
+    height: 36px;
+    font-size: 0.8rem;
+  }
+
+  /* Glass cards */
+  .glass-card {
+    padding: var(--spacing-md);
+    border-radius: var(--radius-md);
+  }
+
   .btn {
     padding: 12px 24px;
     font-size: 0.95rem;
   }
+
+  /* Footer */
+  footer {
+    padding: 40px 0 30px !important;
+  }
+
+  /* Component responsive grids — stack to single column */
+  .zone-grid,
+  .resp-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Table view — single column */
+  .table-view-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .table-view-grid .table-map-card {
+    height: 380px !important;
+  }
+
+  /* Table view header */
+  .table-view-header {
+    flex-direction: column !important;
+    gap: 12px !important;
+  }
+
+  .table-view-header .spacer-div {
+    display: none !important;
+  }
+
+  .table-view-header h2 {
+    font-size: 1.35rem !important;
+    text-align: center !important;
+  }
+
+  /* Guest count */
+  .guest-count-display {
+    font-size: 3.5rem !important;
+  }
+
+  .guest-counter-btn {
+    width: 54px !important;
+    height: 54px !important;
+    font-size: 1.75rem !important;
+  }
+
+  /* Payment options */
+  .payment-type-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Confirmation */
+  .confirmation-heading {
+    font-size: 1.75rem !important;
+  }
+
+  .confirmation-summary-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .confirmation-summary-grid > div {
+    grid-column: span 1 !important;
+  }
+
+  .confirmation-actions {
+    flex-direction: column !important;
+  }
+
+  .confirmation-actions .btn {
+    flex: unset !important;
+    width: 100% !important;
+  }
 }
 
 @media (max-width: 480px) {
+  :root {
+    --spacing-xl: 24px;
+    --spacing-lg: 16px;
+  }
+
   h1 {
     font-size: 1.75rem;
   }
 
   h2 {
     font-size: 1.5rem;
+  }
+
+  /* Even smaller stepper dots */
+  .step-dot {
+    width: 32px;
+    height: 32px;
+    font-size: 0.75rem;
+  }
+
+  .step-item {
+    min-width: 50px;
+  }
+
+  /* Smaller guest count */
+  .guest-count-display {
+    font-size: 3rem !important;
+  }
+
+  .guest-counter-btn {
+    width: 48px !important;
+    height: 48px !important;
+    font-size: 1.5rem !important;
+  }
+
+  /* Extra table panel stacking */
+  .extra-table-panel-inner {
+    flex-direction: column !important;
+    text-align: center !important;
+    gap: 16px !important;
+  }
+
+  .extra-table-panel-inner > div:last-child {
+    align-items: center !important;
   }
 }

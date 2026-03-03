@@ -43,7 +43,7 @@ export default class ZoneMap {
           <span style="font-size: 1.25rem;">📍</span> สำหรับจองวันที่: <span id="current-date" style="color: var(--accent-neon);">${new Date().toLocaleDateString('th-TH')}</span>
         </h2>
         
-        <div class="zone-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: var(--spacing-xl); align-items: start;">
+        <div class="zone-grid resp-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: var(--spacing-xl); align-items: start;">
           <div class="glass-card canvas-grid-bg" style="padding: var(--spacing-xl); text-align: center; background: var(--bg-surface); border: 1px solid var(--glass-border); position: relative; overflow: hidden;">
             <div id="svg-map-wrapper">
               <svg viewBox="0 0 800 500" xmlns="http://www.w3.org/2000/svg" style="width: 100%; height: auto;">
@@ -105,18 +105,18 @@ export default class ZoneMap {
 
     container.innerHTML = `
       <div class="animate-fade">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--spacing-xl); gap: 20px;">
+        <div class="table-view-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--spacing-xl); gap: 20px;">
           <button id="btn-back-to-zones" class="btn btn-ghost" style="padding: 10px 18px; font-size: 0.9rem;">
             <span style="margin-right: 8px;">←</span> เลือกโซนใหม่
           </button>
           <h2 class="font-heading" style="text-align: center; flex-grow: 1; font-size: 1.75rem;">
             โหมดเลือกโต๊ะ: <span style="color: ${this.selectedZone.color}">${this.selectedZone.name}</span>
           </h2>
-          <div style="width: 140px;"></div> <!-- Spacer for centering -->
+          <div class="spacer-div" style="width: 140px;"></div> <!-- Spacer for centering -->
         </div>
 
-        <div style="display: grid; grid-template-columns: 1fr 380px; gap: var(--spacing-xl); align-items: start;">
-          <div class="glass-card canvas-grid-bg" style="position: relative; height: 550px; background: var(--bg-surface); overflow: hidden; border: 1px solid var(--glass-border);">
+        <div class="table-view-grid" style="display: grid; grid-template-columns: 1fr 380px; gap: var(--spacing-xl); align-items: start;">
+          <div class="glass-card canvas-grid-bg table-map-card" style="position: relative; height: 550px; background: var(--bg-surface); overflow: hidden; border: 1px solid var(--glass-border);">
             <div class="stage-guide" style="position: absolute; top: 15px; left: 50%; transform: translateX(-50%); color: var(--text-dim); font-size: 0.75rem; font-weight: 800; letter-spacing: 0.2rem; background: rgba(0,0,0,0.4); padding: 4px 16px; border-radius: 20px;">STAGE SIDE / ฝั่งเวที</div>
             
             <div id="customer-tables-container" style="position: absolute; inset: 60px 30px 30px 30px;">

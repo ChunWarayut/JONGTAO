@@ -23,14 +23,14 @@ export default class Payment {
           </button>
         </div>
         
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: var(--spacing-xl); align-items: start;">
+        <div class="resp-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: var(--spacing-xl); align-items: start;">
           <div class="glass-card" style="padding: var(--spacing-xl);">
             <h2 class="font-heading" style="margin-bottom: var(--spacing-md); font-size: 2rem;">ชำระเงิน / Payment</h2>
             <p style="color: var(--text-dim); margin-bottom: var(--spacing-xl); font-weight: 500;">เลือกรูปแบบและช่องทางการชำระเงินที่ต้องการ</p>
             ${isFeeRequired ? `
             <div style="margin-bottom: var(--spacing-xl);">
               <label class="font-heading" style="display: block; margin-bottom: var(--spacing-md); font-size: 1.1rem;">รูปแบบการชำระเงิน</label>
-              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--spacing-md);">
+              <div class="payment-type-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--spacing-md);">
                 <div class="payment-option ${this.depositPercent === 30 ? 'active' : ''}" data-percent="30">
                   <p style="font-size: 0.85rem; color: var(--text-dim); font-weight: 600;">มัดจำ / Deposit (30%)</p>
                   <p style="font-weight: 800; font-size: 1.25rem; font-family: 'Outfit';">฿${((totalMinSpend * 30) / 100).toLocaleString()}</p>
