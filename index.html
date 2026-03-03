@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="th">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>จองโต๊ะ - Table Reservation</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Prompt:wght@300;400;500;600&display=swap"
+    rel="stylesheet">
+  <link rel="stylesheet" href="/src/styles/main.css">
+</head>
+
+<body>
+  <div id="app">
+    <header class="container">
+      <nav style="display: flex; justify-content: space-between; align-items: center; padding: 24px 0;">
+        <h1 class="font-heading"
+          style="font-size: 1.75rem; background: linear-gradient(135deg, var(--accent-neon), var(--secondary)); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; font-weight: 800; letter-spacing: 0.05em; cursor: pointer;"
+          id="logo-home">
+          JONGTAO</h1>
+        <div id="nav-actions" style="display: flex; gap: 12px; align-items: center;">
+          <button id="btn-clear-booking" class="btn btn-outline"
+            style="display: none; padding: 6px 12px; font-size: 0.8rem; border-color: var(--danger); color: var(--danger);">เริ่มใหม่</button>
+          <a href="/admin.html" class="btn btn-ghost"
+            style="padding: 10px 20px; font-size: 0.85rem; font-weight: 700;">ผู้จัดการ</a>
+        </div>
+      </nav>
+    </header>
+
+    <main class="container">
+      <!-- Stepper -->
+      <div class="stepper" id="stepper">
+        <div class="step-item active" data-step="1">
+          <div class="step-dot">1</div>
+          <span class="step-label">เลือกโซน</span>
+        </div>
+        <div class="step-item" data-step="2">
+          <div class="step-dot">2</div>
+          <span class="step-label">จำนวนคน</span>
+        </div>
+        <div class="step-item" data-step="3">
+          <div class="step-dot">3</div>
+          <span class="step-label">เสริมโต๊ะ</span>
+        </div>
+        <div class="step-item" data-step="4">
+          <div class="step-dot">4</div>
+          <span class="step-label">ข้อมูลลูกค้า</span>
+        </div>
+        <div class="step-item" data-step="5">
+          <div class="step-dot">5</div>
+          <span class="step-label">ชำระเงิน</span>
+        </div>
+      </div>
+
+      <!-- Content -->
+      <div id="step-content" class="animate-slide">
+        <!-- Components will be injected here -->
+      </div>
+    </main>
+
+    <footer class="container"
+      style="margin-top: auto; padding: 60px 0 40px; text-align: center; color: var(--text-dim); font-size: 0.85rem; border-top: 1px solid var(--glass-border); font-weight: 500;">
+      <div
+        style="margin-bottom: 12px; font-family: 'Outfit', sans-serif; font-weight: 700; color: var(--text-muted); letter-spacing: 0.1em;">
+        JONGTAO</div>
+      &copy; 2026 ระบบจองโต๊ะ สงวนลิขสิทธิ์
+    </footer>
+  </div>
+
+  <script type="module" src="/src/main.js"></script>
+</body>
+
+</html>

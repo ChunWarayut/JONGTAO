@@ -1,0 +1,73 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+model Owner {
+  id        Int      @id @default(autoincrement())
+  username  String   @unique
+  password  String
+  name      String
+  createdAt DateTime @default(now())
+}
+
+model Zone {
+  id             Int       @id @default(autoincrement())
+  code           String    @unique
+  name           String
+  seatsPerTable  Int
+  totalTables    Int
+  minSpend       Float
+  extraTableCost Float
+  color          String
+  bookings       Booking[]
+  tables         Table[]
+}
+
+model Table {
+  id       Int       @id @default(autoincrement())
+  number   String    @unique
+  x        Float     @default(0)
+  y        Float     @default(0)
+  status   String    @default("active")
+  zoneId   Int
+  zone     Zone      @relation(fields: [zoneId], references: [id])
+  bookings Booking[]
+}
+
+model Booking {
+  id            Int      @id @default(autoincrement())
+  zoneId        Int
+  zone          Zone     @relation(fields: [zoneId], references: [id])
+  tableId       Int?
+  table         Table?   @relation(fields: [tableId], references: [id])
+  guestCount    Int
+  extraTable    Boolean  @default(false)
+  totalAmount   Float
+  depositAmount Float
+  customerName  String
+  customerPhone String
+  lineId        String?
+  arrivalTime   String
+  occasion      String?
+  note          String?
+  status        String   @default("pending")
+  qrCode        String   @unique
+  paymentMethod String?
+  paymentStatus String   @default("unpaid")
+  bookingDate   DateTime
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model AppConfig {
+  id                   Int     @id @default(1)
+  isBookingOpen        Boolean @default(true)
+  openTime             String  @default("18:00")
+  closeTime            String  @default("02:00")
+  isBookingFeeRequired Boolean @default(true)
+}

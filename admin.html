@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="th">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ระบบจัดการหลังบ้าน - JONGTAO</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Prompt:wght@400;500;600&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="/src/styles/main.css">
+    <link rel="stylesheet" href="/src/styles/admin.css">
+</head>
+
+<body class="admin-body">
+    <div id="admin-app">
+        <!-- Login Screen -->
+        <div id="login-screen" class="animate-fade"
+            style="display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 20px;">
+            <div class="glass-card login-card" style="width: 100%; max-width: 420px; padding: var(--spacing-xl);">
+                <div class="login-header" style="text-align: center; margin-bottom: var(--spacing-xl);">
+                    <h1 class="font-heading"
+                        style="font-size: 2.25rem; margin-bottom: 8px; font-weight: 800; background: linear-gradient(135deg, var(--accent-neon), var(--secondary)); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
+                        OWNER</h1>
+                    <p style="color: var(--text-dim); font-weight: 500; letter-spacing: 0.1em;">เข้าสู่ระบบจัดการ</p>
+                </div>
+                <form id="login-form">
+                    <div class="form-group" style="margin-bottom: var(--spacing-md);">
+                        <label>ชื่อผู้ใช้งาน (Username)</label>
+                        <input type="text" name="username" required placeholder="กรอกชื่อผู้ใช้งาน"
+                            autocomplete="username">
+                    </div>
+                    <div class="form-group" style="margin-bottom: var(--spacing-xl);">
+                        <label>รหัสผ่าน (Password)</label>
+                        <input type="password" name="password" required placeholder="กรอกรหัสผ่าน"
+                            autocomplete="current-password">
+                    </div>
+                    <button type="submit" class="btn btn-primary" style="width: 100%; font-size: 1.1rem; height: 56px;">
+                        เข้าสู่ระบบ
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Main Dashboard UI (Hidden by default) -->
+        <div id="dashboard-layout" style="display: none;">
+            <aside class="sidebar">
+                <div class="sidebar-brand">JONGTAO</div>
+                <nav class="sidebar-nav">
+                    <button class="nav-item active" data-view="dashboard">📊 ภาพรวมแดชบอร์ด</button>
+                    <button class="nav-item" data-view="bookings">📑 รายการจองทั้งหมด</button>
+                    <button class="nav-item" data-view="zones">📍 จัดการโซนและราคา</button>
+                    <button class="nav-item" data-view="map">🗺 ออกแบบผังร้าน</button>
+                    <button class="nav-item" data-view="settings">⚙️ ตั้งค่าระบบ</button>
+                </nav>
+                <div class="sidebar-footer">
+                    <button id="btn-logout" class="btn btn-ghost" style="width: 100%;">ออกจากระบบ</button>
+                </div>
+            </aside>
+
+            <main class="admin-content">
+                <header class="admin-header">
+                    <h2 id="view-title">ภาพรวมแดชบอร์ด</h2>
+                    <div class="user-info">
+                        <span id="owner-name">Admin</span>
+                    </div>
+                </header>
+
+                <div id="admin-view-content" class="animate-fade">
+                    <!-- Views will be rendered here -->
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <script type="module" src="/src/admin.js"></script>
+</body>
+
+</html>

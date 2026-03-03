@@ -1,0 +1,285 @@
+# 🗺 ระบบจองโต๊ะ (Table Reservation System) – Implementation Plan v2
+
+ระบบจองโต๊ะแบบ Full-Stack สำหรับร้านอาหาร/บาร์ ประกอบด้วย **2 ฝั่ง**:
+- 🧑‍💼 **Owner Dashboard** – จัดการโซน, โต๊ะ, ดูรายการจอง
+- 👥 **Customer Booking** – จองโต๊ะผ่าน Multi-Step Flow
+
+**Tech Stack**: Vite + Vanilla JS (Frontend) | Node.js + Express + Prisma + SQLite (Backend API)
+
+---
+
+## User Review Required
+
+> [!IMPORTANT]
+> **ราคาตัวอย่าง** – ค่า Minimum Spend และค่าโต๊ะเสริมตาม table ด้านล่าง ถ้าต้องการเปลี่ยนกรุณาแจ้ง
+>
+> | Zone | Min Spend | Extra Table Cost |
+> |------|-----------|-----------------|
+> | A หน้าเวที | ฿2,000 | ฿500 |
+> | B กลางร้าน | ฿1,500 | ฿400 |
+> | C ด้านหลัง | ฿1,000 | ฿300 |
+> | VIP | ฿5,000 | ฿1,000 |
+
+> [!NOTE]
+> **Payment** – เวอร์ชันนี้เป็น Mock UI ยังไม่เชื่อมต่อ Payment Gateway จริง
+> **Database** – ใช้ SQLite เพื่อความสะดวก Deploy ง่าย เปลี่ยนเป็น PostgreSQL/MySQL ได้ภายหลัง
+
+---
+
+## 🔀 System Flow Diagrams
+
+### 👥 Customer Flow (ลูกค้า)
+
+```mermaid
+flowchart TD
+    A[🏠 หน้าแรก] --> B[📍 STEP 1: เลือกโซน<br/>Interactive Map]
+    B --> C[👥 STEP 2: ระบุจำนวนคน]
+    C --> D{เกินจำนวนที่กำหนด?}
+    D -->|ไม่เกิน| F[📝 STEP 4: กรอกข้อมูล]
+    D -->|เกิน| E[🪑 STEP 3: เสริมโต๊ะ]
+    E --> F
+    F --> G[💳 STEP 5: ชำระเงิน]
+    G --> H[✅ ยืนยัน + QR Check-in]
+
+    style A fill:#0D0D1A,color:#fff
+    style H fill:#2ecc71,color:#fff
+```
+
+### 🧑‍💼 Owner Flow (เจ้าของร้าน)
+
+```mermaid
+flowchart TD
+    A[🔐 Login] --> B[📊 Dashboard]
+    B --> C[📋 จัดการโซน/โต๊ะ]
+    B --> D[📑 ดูรายการจอง]
+    B --> E[📈 สรุปรายได้]
+    
+    C --> C1[เพิ่ม/แก้ไข/ลบ โซน]
+    C --> C2[ตั้งราคา Min Spend]
+    C --> C3[อัปเดตจำนวนโต๊ะ]
+    
+    D --> D1[ดูรายละเอียดแต่ละ Booking]
+    D --> D2[เปลี่ยนสถานะ: pending → confirmed → checked-in → completed]
+    D --> D3[ยกเลิกการจอง]
+    
+    E --> E1[รายได้วันนี้ / สัปดาห์ / เดือน]
+    E --> E2[จำนวน Booking]
+
+    style A fill:#0D0D1A,color:#fff
+    style B fill:#1A1A2E,color:#fff
+```
+
+---
+
+## 📦 API Endpoints
+
+### Auth
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `POST` | `/api/auth/login` | Login เจ้าของร้าน |
+| `POST` | `/api/auth/logout` | Logout |
+
+### Zones (Owner CRUD + Customer Read)
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `GET` | `/api/zones` | ดึงโซนทั้งหมด + จำนวนโต๊ะว่าง |
+| `GET` | `/api/zones/:id` | ดึงรายละเอียดโซน |
+| `POST` | `/api/zones` | 🔒 สร้างโซนใหม่ |
+| `PUT` | `/api/zones/:id` | 🔒 แก้ไขโซน (ราคา, จำนวนโต๊ะ) |
+| `DELETE` | `/api/zones/:id` | 🔒 ลบโซน |
+
+### Bookings
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `POST` | `/api/bookings` | ลูกค้าสร้าง Booking ใหม่ |
+| `GET` | `/api/bookings` | 🔒 ดูรายการจองทั้งหมด (filter by date/status) |
+| `GET` | `/api/bookings/:id` | ดูรายละเอียด Booking (by ID or QR code) |
+| `PATCH` | `/api/bookings/:id/status` | 🔒 เปลี่ยนสถานะ Booking |
+| `DELETE` | `/api/bookings/:id` | 🔒 ยกเลิก Booking |
+
+### Dashboard Stats
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `GET` | `/api/stats/today` | 🔒 สรุปวันนี้ (booking count, revenue) |
+| `GET` | `/api/stats/summary` | 🔒 สรุปรายสัปดาห์/เดือน |
+
+> 🔒 = ต้อง Auth (Owner only)
+
+---
+
+## 🗄 Database Schema (Prisma)
+
+```prisma
+model Owner {
+  id        Int      @id @default(autoincrement())
+  username  String   @unique
+  password  String   // hashed
+  name      String
+  createdAt DateTime @default(now())
+}
+
+model Zone {
+  id             Int       @id @default(autoincrement())
+  code           String    @unique // A, B, C, VIP
+  name           String    // Zone A – หน้าเวที
+  seatsPerTable  Int       // 4 or 6
+  totalTables    Int
+  minSpend       Float
+  extraTableCost Float
+  color          String    // hex
+  bookings       Booking[]
+}
+
+model Booking {
+  id            Int      @id @default(autoincrement())
+  zoneId        Int
+  zone          Zone     @relation(fields: [zoneId], references: [id])
+  guestCount    Int
+  extraTable    Boolean  @default(false)
+  totalAmount   Float
+  depositAmount Float
+  // Customer info
+  customerName  String
+  customerPhone String
+  lineId        String?
+  arrivalTime   String
+  occasion      String?  // birthday, anniversary, etc.
+  note          String?
+  // Status
+  status        String   @default("pending") // pending, confirmed, checked-in, completed, cancelled
+  qrCode        String   @unique
+  // Payment
+  paymentMethod String?  // transfer, promptpay, credit
+  paymentStatus String   @default("unpaid") // unpaid, deposit, paid
+  // Timestamps
+  bookingDate   DateTime
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+```
+
+---
+
+## 📁 File Structure
+
+```
+jongtao/
+├── package.json
+├── vite.config.js
+│
+├── server/                    # 🔧 Backend API
+│   ├── index.js               # Express server entry
+│   ├── prisma/
+│   │   └── schema.prisma
+│   ├── routes/
+│   │   ├── auth.js
+│   │   ├── zones.js
+│   │   ├── bookings.js
+│   │   └── stats.js
+│   ├── middleware/
+│   │   └── auth.js            # JWT auth middleware
+│   ├── controllers/
+│   │   ├── authController.js
+│   │   ├── zoneController.js
+│   │   ├── bookingController.js
+│   │   └── statsController.js
+│   └── utils/
+│       └── qrcode.js          # QR generation
+│
+├── index.html                 # Customer booking page
+├── admin.html                 # Owner dashboard page
+│
+├── src/                       # 🎨 Frontend
+│   ├── main.js                # Customer app entry
+│   ├── admin.js               # Owner app entry
+│   ├── api/
+│   │   └── client.js          # Fetch wrapper for API calls
+│   ├── data/
+│   │   └── zones.js           # Zone config (fallback)
+│   ├── utils/
+│   │   └── helpers.js
+│   ├── styles/
+│   │   ├── variables.css
+│   │   ├── main.css           # Customer styles
+│   │   └── admin.css          # Owner dashboard styles
+│   ├── components/
+│   │   ├── ZoneMap.js          # Interactive SVG map
+│   │   ├── ZoneDetail.js       # Zone info panel
+│   │   ├── GuestCount.js       # Guest counter
+│   │   ├── ExtraTable.js       # Extra table toggle
+│   │   ├── CustomerForm.js     # Customer info form
+│   │   ├── Payment.js          # Payment selection
+│   │   └── Confirmation.js     # Success + QR
+│   └── admin/
+│       ├── Dashboard.js        # Stats overview
+│       ├── ZoneManager.js      # CRUD zones
+│       ├── BookingList.js      # Booking table + filters
+│       └── BookingDetail.js    # Single booking view
+```
+
+---
+
+## Proposed Changes (สรุป)
+
+### Backend API (`server/`)
+
+#### [NEW] [index.js](file:///Users/chunwarayut/Documents/jongtao/server/index.js)
+Express server, CORS, JSON body parser, route mounting, Prisma client init
+
+#### [NEW] [schema.prisma](file:///Users/chunwarayut/Documents/jongtao/server/prisma/schema.prisma)
+Database schema ตาม model ด้านบน (SQLite)
+
+#### [NEW] [auth.js](file:///Users/chunwarayut/Documents/jongtao/server/routes/auth.js) + [authController.js](file:///Users/chunwarayut/Documents/jongtao/server/controllers/authController.js)
+Login/logout with JWT, password hash with bcrypt
+
+#### [NEW] [zones.js](file:///Users/chunwarayut/Documents/jongtao/server/routes/zones.js) + [zoneController.js](file:///Users/chunwarayut/Documents/jongtao/server/controllers/zoneController.js)
+CRUD zones + available tables count (minus booked)
+
+#### [NEW] [bookings.js](file:///Users/chunwarayut/Documents/jongtao/server/routes/bookings.js) + [bookingController.js](file:///Users/chunwarayut/Documents/jongtao/server/controllers/bookingController.js)
+Create booking, list/filter, status update, cancel
+
+#### [NEW] [stats.js](file:///Users/chunwarayut/Documents/jongtao/server/routes/stats.js) + [statsController.js](file:///Users/chunwarayut/Documents/jongtao/server/controllers/statsController.js)
+Aggregate booking count & revenue
+
+#### [NEW] [auth middleware](file:///Users/chunwarayut/Documents/jongtao/server/middleware/auth.js)
+JWT verification middleware
+
+---
+
+### Customer Frontend (`src/`)
+(เหมือน Plan v1 + เพิ่ม API client)
+
+#### [NEW] [client.js](file:///Users/chunwarayut/Documents/jongtao/src/api/client.js)
+Fetch wrapper: `get()`, `post()`, `patch()`, `del()` with base URL & error handling
+
+---
+
+### Owner Frontend (`src/admin/`)
+
+#### [NEW] [admin.html](file:///Users/chunwarayut/Documents/jongtao/admin.html)
+Owner dashboard HTML shell + sidebar navigation
+
+#### [NEW] [Dashboard.js](file:///Users/chunwarayut/Documents/jongtao/src/admin/Dashboard.js)
+Stats cards (booking วันนี้, revenue, จำนวนโต๊ะว่าง), mini chart
+
+#### [NEW] [ZoneManager.js](file:///Users/chunwarayut/Documents/jongtao/src/admin/ZoneManager.js)
+Table/Card view ของ zones + modal เพิ่ม/แก้ไข/ลบ
+
+#### [NEW] [BookingList.js](file:///Users/chunwarayut/Documents/jongtao/src/admin/BookingList.js)
+ตาราง booking + filter (วันที่, สถานะ, โซน) + search
+
+#### [NEW] [BookingDetail.js](file:///Users/chunwarayut/Documents/jongtao/src/admin/BookingDetail.js)
+รายละเอียด booking + ปุ่มเปลี่ยนสถานะ + ยกเลิก
+
+---
+
+## Verification Plan
+
+### Automated
+1. **API Testing**: ทดสอบทุก endpoint ด้วย `curl` หรือ browser tool
+2. **E2E Flow**: จอง → เช็คใน DB → เห็นใน admin dashboard
+
+### Browser Testing
+1. **Customer Flow**: เลือกโซน → ใส่จำนวนคน → กรอกฟอร์ม → จ่าย → เห็น QR
+2. **Owner Flow**: Login → ดู dashboard → จัดการโซน → เปลี่ยนสถานะ booking
+3. **Responsive**: Mobile + Desktop ทั้ง 2 ฝั่ง

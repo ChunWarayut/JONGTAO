@@ -1,0 +1,37 @@
+{
+  "name": "jongtao",
+  "version": "1.0.0",
+  "description": "Table Reservation System",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "server": "nodemon server/index.js",
+    "prisma:generate": "prisma generate --schema=server/prisma/schema.prisma",
+    "prisma:migrate": "prisma migrate dev --name init --schema=server/prisma/schema.prisma",
+    "prisma:studio": "prisma studio --schema=server/prisma/schema.prisma",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "coverage": "vitest run --coverage"
+  },
+  "dependencies": {
+    "@prisma/client": "^5.22.0",
+    "bcryptjs": "^2.4.3",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.21.1",
+    "jsonwebtoken": "^9.0.2",
+    "prisma": "^5.22.0"
+  },
+  "devDependencies": {
+    "@testing-library/dom": "^10.4.1",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@vitest/coverage-v8": "^4.0.18",
+    "jsdom": "^28.1.0",
+    "nodemon": "^3.1.7",
+    "supertest": "^7.2.2",
+    "vite": "^5.4.11",
+    "vitest": "^4.0.18"
+  }
+}
