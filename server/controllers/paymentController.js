@@ -1,16 +1,22 @@
 import Stripe from 'stripe'
-import { PrismaClient } from '@prisma/client'
-import dotenv from 'dotenv'
-
-dotenv.config()
+import { prisma } from '../index.js'
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY)
-const prisma = new PrismaClient()
 
 export const createPaymentIntent = async (req, res) => {
     const { bookingId, amount, currency = 'thb' } = req.body
 
     try {
+        // Input validation
+        if (!bookingId || !amount) {
+            return res.status(400).json({ error: 'bookingId and amount are required' })
+        }
+
+        const parsedAmount = parseFloat(amount)
+        if (isNaN(parsedAmount) || parsedAmount <= 0) {
+            return res.status(400).json({ error: 'amount must be a positive number' })
+        }
+
         // 1. Fetch booking to verify
         const booking = await prisma.booking.findUnique({
             where: { id: parseInt(bookingId) }
@@ -20,10 +26,14 @@ export const createPaymentIntent = async (req, res) => {
             return res.status(404).json({ error: 'Booking not found' })
         }
 
-        // 2. Create PaymentIntent
-        // For PromptPay, we need to specify 'promptpay' in payment_method_types
+        // 2. Verify amount matches booking deposit
+        if (Math.abs(parsedAmount - booking.depositAmount) > 0.01) {
+            return res.status(400).json({ error: 'Amount does not match booking deposit' })
+        }
+
+        // 3. Create PaymentIntent
         const paymentIntent = await stripe.paymentIntents.create({
-            amount: Math.round(amount * 100), // Stripe expects amount in subunits (satang for THB)
+            amount: Math.round(parsedAmount * 100), // Stripe expects amount in subunits (satang for THB)
             currency: currency,
             payment_method_types: ['promptpay'],
             metadata: {
@@ -31,7 +41,7 @@ export const createPaymentIntent = async (req, res) => {
             }
         })
 
-        // 3. Update booking with PaymentIntent ID
+        // 4. Update booking with PaymentIntent ID
         await prisma.booking.update({
             where: { id: booking.id },
             data: { stripePaymentIntentId: paymentIntent.id }
@@ -63,41 +73,46 @@ export const handleWebhook = async (req, res) => {
     }
 
     // Handle the event
-    switch (event.type) {
-        case 'payment_intent.succeeded':
-            const paymentIntent = event.data.object
-            console.log(`PaymentIntent for ${paymentIntent.amount} was successful!`)
+    try {
+        switch (event.type) {
+            case 'payment_intent.succeeded': {
+                const paymentIntent = event.data.object
+                console.log(`PaymentIntent for ${paymentIntent.amount} was successful!`)
 
-            // Update booking status
-            await prisma.booking.update({
-                where: { stripePaymentIntentId: paymentIntent.id },
-                data: {
-                    status: 'confirmed',
-                    paymentStatus: 'paid'
-                }
-            })
-            break;
+                await prisma.booking.update({
+                    where: { stripePaymentIntentId: paymentIntent.id },
+                    data: {
+                        status: 'confirmed',
+                        paymentStatus: 'paid'
+                    }
+                })
+                break
+            }
 
-        case 'payment_intent.payment_failed':
-            const failedIntent = event.data.object
-            console.error(`Payment failed: ${failedIntent.last_payment_error?.message}`)
+            case 'payment_intent.payment_failed': {
+                const failedIntent = event.data.object
+                console.error(`Payment failed: ${failedIntent.last_payment_error?.message}`)
 
-            // Optionally update booking status to cancelled or failed
-            await prisma.booking.update({
-                where: { stripePaymentIntentId: failedIntent.id },
-                data: {
-                    paymentStatus: 'failed'
-                }
-            })
-            break;
+                await prisma.booking.update({
+                    where: { stripePaymentIntentId: failedIntent.id },
+                    data: {
+                        paymentStatus: 'failed'
+                    }
+                })
+                break
+            }
 
-        case 'payment_intent.created':
-        case 'payment_intent.processing':
-            // These are expected, no action needed for now
-            break;
+            case 'payment_intent.created':
+            case 'payment_intent.processing':
+                // Expected lifecycle events, no action needed
+                break
 
-        default:
-            console.log(`Unhandled event type ${event.type}`)
+            default:
+                console.log(`Unhandled event type ${event.type}`)
+        }
+    } catch (dbError) {
+        console.error('Webhook DB operation failed:', dbError)
+        // Still return 200 to prevent Stripe from retrying
     }
 
     res.json({ received: true })

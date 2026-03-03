@@ -270,7 +270,7 @@ class App {
                         promptpay: {},
                         billing_details: {
                             name: this.reservation.customer.name || 'Unknown',
-                            email: this.reservation.customer.email || `${(this.reservation.customer.phone || 'guest')}@jongtao.local`
+                            email: this.reservation.customer.email
                         }
                     }
                 });

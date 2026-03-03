@@ -11,6 +11,7 @@ JONGTAO is a modern, real-time table reservation system designed for restaurants
 - **Real-time Availability**: Tables update instantly using Server-Sent Events (SSE). If another customer books a table, it turns gray immediately on your screen.
 - **Fluid Booking Flow**: Step-by-step process (Zone -> Guests -> Extra Tables -> Customer Info -> Payment).
 - **QR Code Confirmation**: Instant booking confirmation with a unique QR code for check-in.
+- **Stripe PromptPay**: Secure deposit payments via Thai QR PromptPay powered by Stripe.
 - **Thai Language UI**: Fully localized interface for better accessibility.
 
 ### 🛠️ Administrative Power
@@ -26,6 +27,7 @@ JONGTAO is a modern, real-time table reservation system designed for restaurants
 - **Backend**: [Node.js](https://nodejs.org/) + [Express.js](https://expressjs.com/).
 - **Database**: [SQLite](https://sqlite.org/) managed via [Prisma ORM](https://www.prisma.io/).
 - **Real-time communication**: [Server-Sent Events (SSE)](https://developer.mozilla.org/en-US/docs/Web/API/Server-sent_events).
+- **Payments**: [Stripe](https://stripe.com/) (PromptPay QR via PaymentIntents).
 - **Testing**: [Vitest](https://vitest.dev/) + [Supertest](https://github.com/ladjs/supertest).
 
 ## 📥 Installation & Setup
@@ -55,7 +57,16 @@ JONGTAO is a modern, real-time table reservation system designed for restaurants
    ```env
    DATABASE_URL="file:./dev.db"
    JWT_SECRET="your_secret_key"
-   PORT=3000
+   PORT=3001
+   STRIPE_SECRET_KEY="sk_test_..."
+   STRIPE_PUBLISHABLE_KEY="pk_test_..."
+   STRIPE_WEBHOOK_SECRET="whsec_..."
+   ```
+
+5. **Stripe Webhook (Local Testing)**:
+   ```bash
+   # Install Stripe CLI: https://stripe.com/docs/stripe-cli
+   stripe listen --forward-to http://localhost:3001/api/payments/webhook
    ```
 
 ## 🛠️ Available Scripts

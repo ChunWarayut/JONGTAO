@@ -2,4 +2,12 @@ node_modules
 # Keep environment variables out of version control
 .env
 
+# Database files
+server/prisma/dev.db
+server/prisma/dev.db-journal
+
+# Generated Prisma client
 /src/generated/prisma
+
+# Coverage reports
+coverage

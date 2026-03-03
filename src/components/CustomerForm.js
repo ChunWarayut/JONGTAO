@@ -27,6 +27,11 @@ export default class CustomerForm {
             </div>
             
             <div class="form-group">
+              <label class="font-heading">อีเมล * <span style="font-size: 0.75rem; color: var(--text-dim); font-family: 'Work Sans'; opacity: 0.8;">(สำหรับยืนยันการชำระเงิน)</span></label>
+              <input type="email" name="email" required placeholder="example@email.com" value="${this.reservation.customer.email || ''}" class="form-control-pro">
+            </div>
+
+            <div class="form-group">
               <label class="font-heading">Line ID <span style="font-size: 0.75rem; color: var(--success); font-family: 'Work Sans'; opacity: 0.8;">(แนะนำสำหรับการติดต่อ)</span></label>
               <input type="text" name="lineId" placeholder="@line_id" value="${this.reservation.customer.lineId || ''}" class="form-control-pro">
             </div>
