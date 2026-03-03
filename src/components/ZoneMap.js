@@ -141,6 +141,7 @@ export default class ZoneMap {
     }).join('')}
             </div>
           </div>
+          <p class="swipe-hint" style="display: none; text-align: center; color: var(--text-dim); font-size: 0.75rem; padding: 8px 0; opacity: 0.7;">👆 เลื่อนซ้าย-ขวาเพื่อดูโต๊ะทั้งหมด</p>
 
           <div id="table-confirm-panel">
             <div class="glass-card" style="padding: var(--spacing-xl); border-color: ${this.selectedTable ? 'var(--primary)' : 'var(--glass-border)'}; transition: all 0.3s ease;">
