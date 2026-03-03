@@ -2,7 +2,7 @@
 
 JONGTAO is a modern, real-time table reservation system designed for restaurants and venues. It features a sleek glassmorphism UI with neon accents, full Thai language support, and a real-time administrative dashboard.
 
-![Real-time Dashboard](https://raw.githubusercontent.com/ChunWarayut/JONGTAO/refs/heads/main/public/screenshot.png) *(Placeholder if you add images to repo)*
+![Real-time Dashboard](https://raw.githubusercontent.com/ChunWarayut/JONGTAO/refs/heads/main/public/screenshot.png)
 
 ## ✨ Key Features
 
