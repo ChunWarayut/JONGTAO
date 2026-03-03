@@ -48,24 +48,8 @@ export default class Payment {
                 <label class="method-card">
                   <input type="radio" name="method" value="promptpay" checked>
                   <div style="display: flex; align-items: center; gap: 12px; flex-grow: 1;">
-                    <img src="https://upload.wikimedia.org/wikipedia/commons/c/c5/PromptPay_logo.png" alt="PromptPay" style="height: 24px;">
+                    <img src="https://upload.wikimedia.org/wikipedia/commons/c/c5/PromptPay-logo.png" alt="PromptPay" style="height: 24px;">
                     <span style="font-weight: 600;">Thai QR PromptPay</span>
-                  </div>
-                  <div class="check-icon"></div>
-                </label>
-                <label class="method-card">
-                  <input type="radio" name="method" value="bank">
-                  <div style="display: flex; align-items: center; gap: 12px; flex-grow: 1;">
-                    <div style="width: 24px; height: 24px; background: var(--primary); border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 0.7rem;">🏦</div>
-                    <span style="font-weight: 600;">Mobile Banking (โอนเงิน)</span>
-                  </div>
-                  <div class="check-icon"></div>
-                </label>
-                <label class="method-card">
-                  <input type="radio" name="method" value="credit">
-                  <div style="display: flex; align-items: center; gap: 12px; flex-grow: 1;">
-                    <div style="width: 24px; height: 24px; background: var(--secondary); border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 0.7rem;">💳</div>
-                    <span style="font-weight: 600;">Credit / Debit Card</span>
                   </div>
                   <div class="check-icon"></div>
                 </label>
