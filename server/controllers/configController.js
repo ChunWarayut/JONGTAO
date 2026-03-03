@@ -20,7 +20,10 @@ export const getConfig = async (req, res) => {
             })
         }
 
-        res.json(config)
+        res.json({
+            ...config,
+            stripePublishableKey: process.env.STRIPE_PUBLISHABLE_KEY
+        })
     } catch (error) {
         console.error('Get config error:', error)
         res.status(500).json({ error: 'Internal server error' })

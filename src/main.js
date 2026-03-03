@@ -233,12 +233,57 @@ class App {
                 arrivalTime: this.reservation.customer.arrivalTime || '19:00',
                 occasion: this.reservation.customer.occasion,
                 note: this.reservation.customer.note,
-                bookingDate: new Date().toISOString() // Or from a date picker if added
+                bookingDate: new Date().toISOString(),
+                paymentMethod: this.reservation.payment.method
             };
 
             const result = await client.post('/bookings', payload);
             this.reservation.id = result.id;
             this.reservation.qrCode = result.qrCode;
+
+            // Handle Stripe PromptPay payment
+            if (this.reservation.payment.method === 'promptpay' && this.reservation.payment.depositAmount > 0) {
+                this.container.innerHTML = `
+                <div style="text-align: center; padding: 100px 0;">
+                  <div class="loader" style="margin: 0 auto 20px;"></div>
+                  <p>กำลังเตรียมช่องทางชำระเงิน (PromptPay)...</p>
+                </div>
+              `;
+
+                // 1. Create PaymentIntent on server
+                const stripeData = await client.post('/payments/create-intent', {
+                    bookingId: result.id,
+                    amount: this.reservation.payment.depositAmount
+                });
+
+                // 2. Re-fetch config to ensure we have the latest publishable key
+                const freshConfig = await client.get('/config');
+                const publishableKey = freshConfig.stripePublishableKey;
+                if (!publishableKey) {
+                    throw new Error('Stripe publishable key not configured');
+                }
+                const stripe = Stripe(publishableKey);
+
+                // 3. Handle next action for PromptPay (QR Code)
+                const { error, paymentIntent } = await stripe.confirmPromptPayPayment(stripeData.clientSecret, {
+                    payment_method: {
+                        promptpay: {},
+                        billing_details: {
+                            name: this.reservation.customer.name || 'Unknown',
+                            email: this.reservation.customer.email || `${(this.reservation.customer.phone || 'guest')}@jongtao.local`
+                        }
+                    }
+                });
+
+                if (error) {
+                    throw new Error(error.message);
+                }
+
+                // After confirmation, Stripe will show the QR code in a redirect or we can handle it.
+                // For PromptPay, confirmPromptPayPayment might redirect or open a modal.
+                // If it returns, we Proceed to success screen where we wait for webhook.
+                this.reservation.stripePaymentIntentId = paymentIntent.id;
+            }
 
             this.clearStorage();
             this.goToStep(6);

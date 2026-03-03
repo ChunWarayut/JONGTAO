@@ -53,6 +53,7 @@ export const createBooking = async (req, res) => {
                 qrCode,
                 bookingDate: new Date(bookingDate),
                 status: 'pending',
+                paymentMethod: req.body.paymentMethod || 'promptpay',
                 paymentStatus: 'unpaid'
             }
         })

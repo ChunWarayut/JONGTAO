@@ -237,6 +237,9 @@ export default class Payment {
       if (window.app && window.app.saveToStorage) {
         window.app.saveToStorage();
       }
+
+      // If method is promptpay, we handle it specially in main.js
+      // But we can also trigger a loading state here if needed
       this.onNext();
     });
   }

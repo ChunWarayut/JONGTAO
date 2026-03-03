@@ -12,8 +12,12 @@ export default class Confirmation {
           <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
         </div>
         
-        <h1 class="font-heading" style="margin-bottom: var(--spacing-xs); font-size: 2.5rem;">จองโต๊ะสำเร็จ!</h1>
-        <p style="color: var(--text-dim); margin-bottom: var(--spacing-xl); font-weight: 500;">รายละเอียดถูกส่งไปที่ Line ID: <span style="color: var(--accent-neon); font-weight: 700;">${customer.lineId || 'N/A'}</span></p>
+        <h1 class="font-heading" style="margin-bottom: var(--spacing-xs); font-size: 2.5rem;">${payment.method === 'promptpay' ? 'รับทราบการจ่ายเงิน!' : 'จองโต๊ะสำเร็จ!'}</h1>
+        <p style="color: var(--text-dim); margin-bottom: var(--spacing-xl); font-weight: 500;">
+          ${payment.method === 'promptpay'
+        ? 'เรากำลังรอยืนยันยอดเงินจาก Stripe... เมื่อสำเร็จ ระบบจะอัปเดตสถานะทันที'
+        : `รายละเอียดถูกส่งไปที่ Line ID: <span style="color: var(--accent-neon); font-weight: 700;">${customer.lineId || 'N/A'}</span>`}
+        </p>
 
         <div class="glass-card" style="padding: 0; overflow: hidden; margin-bottom: var(--spacing-xl); border-color: var(--success);">
           <div style="background: linear-gradient(90deg, var(--success), #28a745); padding: 12px; color: white; font-weight: 800; font-family: 'Outfit'; letter-spacing: 0.1em; font-size: 0.8rem;">

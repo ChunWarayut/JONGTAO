@@ -10,14 +10,20 @@ import bookingRoutes from './routes/bookings.js'
 import statsRoutes from './routes/stats.js'
 import tableRoutes from './routes/tables.js'
 import configRoutes from './routes/config.js'
+import paymentRoutes from './routes/payment.js'
 
 dotenv.config()
 
 const app = express()
 const prisma = new PrismaClient()
-const PORT = process.env.PORT || 3000
+const PORT = process.env.PORT || 3001 // Using 3001 as seen in .env
 
 app.use(cors())
+
+// Stripe webhook needs raw body, so we handle it before express.json()
+// The paymentRoutes handles its own express.raw for the webhook endpoint
+app.use('/api/payments', paymentRoutes)
+
 app.use(express.json())
 
 // Health check
