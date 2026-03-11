@@ -26,7 +26,7 @@ class App {
     getDefaultReservation() {
         return {
             zone: null,
-            guestCount: 1,
+            guestCount: 3,
             extraTable: false,
             customer: {},
             payment: {}

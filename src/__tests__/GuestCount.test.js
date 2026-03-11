@@ -10,7 +10,7 @@ describe('GuestCount Component', () => {
         container = document.createElement('div');
         reservation = {
             zone: { name: 'A', seats: 4 },
-            guestCount: 1
+            guestCount: 3
         };
     });
 
@@ -19,6 +19,9 @@ describe('GuestCount Component', () => {
         await component.render(container);
 
         component.count = 2; component.updateDisplay(container);
+        expect(container.textContent).toContain('นโยบายการใช้บริการ 2 ท่าน');
+
+        component.count = 3; component.updateDisplay(container);
         expect(container.textContent).toContain('✅');
 
         component.count = 5; component.updateDisplay(container);
@@ -33,14 +36,16 @@ describe('GuestCount Component', () => {
         await component.render(container);
 
         container.querySelector('#btn-plus').click();
+        expect(component.count).toBe(4);
+
+        container.querySelector('#btn-minus').click();
+        expect(component.count).toBe(3);
+
+        // Lower limit is now 2
+        container.querySelector('#btn-minus').click();
         expect(component.count).toBe(2);
-
         container.querySelector('#btn-minus').click();
-        expect(component.count).toBe(1);
-
-        // Lower limit
-        container.querySelector('#btn-minus').click();
-        expect(component.count).toBe(1);
+        expect(component.count).toBe(2);
 
         container.querySelector('#btn-next').click();
         expect(onNext).toHaveBeenCalled();
@@ -49,7 +54,7 @@ describe('GuestCount Component', () => {
     it('should cover initialization branch', () => {
         delete reservation.guestCount;
         const component = new GuestCount(reservation, onNext, onPrev);
-        expect(component.count).toBe(1);
+        expect(component.count).toBe(3);
     });
 
     it('should handle back navigation', async () => {

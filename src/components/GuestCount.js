@@ -3,7 +3,7 @@ export default class GuestCount {
         this.reservation = reservation;
         this.onNext = onNext;
         this.onPrev = onPrev;
-        this.count = reservation.guestCount || 1;
+        this.count = reservation.guestCount || 3;
     }
 
     render(container) {
@@ -41,7 +41,7 @@ export default class GuestCount {
 
     attachEvents(container) {
         container.querySelector('#btn-minus').addEventListener('click', () => {
-            if (this.count > 1) {
+            if (this.count > 2) {
                 this.count--;
                 this.updateDisplay(container);
             }
@@ -77,7 +77,14 @@ export default class GuestCount {
 
         let html = '';
 
-        if (this.count <= zone.seats) {
+        if (this.count === 2) {
+            html = `
+        <div style="text-align: center;">
+          <p style="color: var(--accent-neon); margin-bottom: 5px; font-weight: 700;">🤝 นโยบายการใช้บริการ 2 ท่าน</p>
+          <p style="font-size: 0.85rem; color: var(--text-main);">ทางร้านขออนุญาตจัดลูกค้า Walk-in เข้านั่งร่วมโต๊ะ (Sharing Table) เพื่อให้เป็นไปตามจำนวนขั้นต่ำที่กำหนด</p>
+        </div>
+      `;
+        } else if (this.count <= zone.seats) {
             html = `<p style="color: var(--success);">✅ จำนวนคนที่เหมาะสมสำหรับโซนนี้</p>`;
         } else if (this.count <= zone.seats + 2) {
             html = `

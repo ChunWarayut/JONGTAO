@@ -56,6 +56,15 @@ export default class CustomerForm {
               <textarea name="note" rows="3" placeholder="ระบุรายละเอียดเพิ่มเติมที่ต้องการบอกทางร้าน..." class="form-control-pro">${this.reservation.customer.note || ''}</textarea>
             </div>
 
+            ${this.reservation.guestCount === 2 ? `
+            <div class="form-group" style="grid-column: 1 / -1; background: rgba(124, 58, 237, 0.1); padding: var(--spacing-md); border-radius: var(--radius-md); border: 1px solid rgba(124, 58, 237, 0.3); margin-top: var(--spacing-sm);">
+              <label style="display: flex; align-items: flex-start; gap: 12px; cursor: pointer; margin: 0; color: var(--text-main);">
+                <input type="checkbox" required style="width: 20px; height: 20px; margin-top: 2px; accent-color: var(--primary);">
+                <span style="font-size: 0.9rem; font-weight: 500; line-height: 1.4;">ฉันยอมรับเงื่อนไขการนั่งร่วมโต๊ะกับลูกค้าท่านอื่น (Walk-in) ในกรณีที่มาใช้บริการเพียง 2 ท่าน เพื่อให้เป็นไปตามนโยบายของทางร้าน</span>
+              </label>
+            </div>
+            ` : ''}
+
             <div style="grid-column: 1 / -1; margin-top: var(--spacing-xl);">
               <button type="submit" class="btn btn-primary" style="width: 100%; height: 60px; font-size: 1.25rem; font-weight: 800;">
                 ดำเนินการต่อเพื่อชำระเงิน <span style="margin-left: 8px;">→</span>
