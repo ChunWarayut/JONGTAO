@@ -183,16 +183,16 @@ export default class ZoneMap {
       </div>
 
       <style>
-        .map-el { position: absolute; border: 2px solid rgba(255,255,255,0.15); border-radius: 8px; display: flex; flex-direction: column; align-items: center; justify-content: center; color: rgba(255,255,255,0.6); font-weight: 700; font-family: 'Outfit', sans-serif; background: rgba(255,255,255,0.02); }
+        .map-el { position: absolute; border: 2px solid rgba(255,255,255,0.15); border-radius: 4px; display: flex; flex-direction: column; align-items: center; justify-content: center; color: rgba(255,255,255,0.6); font-weight: 700; font-family: 'Outfit', sans-serif; background: rgba(255,255,255,0.02); }
         .map-el.accent { border-color: var(--accent-neon); color: var(--accent-neon); box-shadow: 0 0 15px rgba(0, 255, 255, 0.1), inset 0 0 10px rgba(0, 255, 255, 0.05); }
         .map-el.red { border-color: #ff3366; color: #ff3366; box-shadow: 0 0 15px rgba(255, 51, 102, 0.1), inset 0 0 10px rgba(255, 51, 102, 0.05); }
         .map-el-text { position: absolute; display: flex; flex-direction: column; align-items: center; justify-content: center; color: rgba(255,255,255,0.5); font-weight: 700; font-family: 'Outfit', sans-serif; border: none; background: none; }
         .v-text { writing-mode: vertical-rl; text-orientation: mixed; letter-spacing: 0.15rem; }
 
         .table-select {
-          width: 48px;
-          height: 48px;
-          border-radius: 50%;
+          width: 44px;
+          height: 44px;
+          border-radius: 8px;
           display: flex;
           align-items: center;
           justify-content: center;

@@ -1,0 +1,117 @@
+[
+  {
+    "id": "reception",
+    "label": "จุดรับโต๊ะ",
+    "sublabel": "ติด Rich Brand",
+    "x": 5,
+    "y": 5,
+    "w": 22,
+    "h": 8,
+    "style": ""
+  },
+  {
+    "id": "photo",
+    "label": "จุดถ่ายรูปศิลปิน",
+    "x": 5,
+    "y": 15,
+    "w": 22,
+    "h": 8,
+    "style": ""
+  },
+  {
+    "id": "dj",
+    "label": "DJ",
+    "x": 15,
+    "y": 25,
+    "w": 10,
+    "h": 7.5,
+    "style": "accent"
+  },
+  {
+    "id": "stage",
+    "label": "STAGE",
+    "x": 5,
+    "y": 35,
+    "w": 10,
+    "h": 47.5,
+    "style": "red",
+    "vertical": true
+  },
+  {
+    "id": "toilet-left",
+    "label": "TOILET",
+    "icon": "🚻",
+    "x": 5,
+    "y": 84,
+    "w": 12,
+    "h": 16,
+    "style": "red"
+  },
+  {
+    "id": "bar",
+    "label": "BAR",
+    "x": 17.5,
+    "y": 85,
+    "w": 35,
+    "h": 15,
+    "style": "accent"
+  },
+  {
+    "id": "toilet-right",
+    "label": "TOILET",
+    "icon": "🚻",
+    "x": 75,
+    "y": 70,
+    "w": 17.5,
+    "h": 25,
+    "style": "red"
+  },
+  {
+    "id": "outdoor-top",
+    "label": "OUTDOOR",
+    "x": 40,
+    "y": 0,
+    "w": 40,
+    "h": 22.5,
+    "style": "",
+    "vertical": true
+  },
+  {
+    "id": "projector",
+    "label": "PROJECTOR",
+    "x": 82.5,
+    "y": 0,
+    "w": 10,
+    "h": 22.5,
+    "style": "accent",
+    "vertical": true
+  },
+  {
+    "id": "outdoor-mid",
+    "label": "OUTDOOR",
+    "x": 75,
+    "y": 25,
+    "w": 17.5,
+    "h": 42.5,
+    "style": ""
+  },
+  {
+    "id": "entrance",
+    "label": "ทางเข้า ➔",
+    "x": 28,
+    "y": 27,
+    "w": 8,
+    "h": 4,
+    "style": "text"
+  },
+  {
+    "id": "exit",
+    "label": "ทางออก ➔",
+    "x": 68,
+    "y": 62,
+    "w": 5,
+    "h": 8,
+    "style": "text",
+    "vertical": true
+  }
+]

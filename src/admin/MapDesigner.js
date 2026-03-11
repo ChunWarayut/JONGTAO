@@ -10,6 +10,11 @@ export default class MapDesigner {
         this.isDragging = false;
         this.draggedTable = null;
         this.offset = { x: 0, y: 0 };
+        this.gridSize = 2.5; // Snap grid size in percentage
+    }
+
+    snapToGrid(val) {
+        return Math.round(val / this.gridSize) * this.gridSize;
     }
 
     async render(container) {
@@ -74,16 +79,18 @@ export default class MapDesigner {
             <style>
                 .canvas-grid-bg {
                     background-image: 
-                        linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
-                        linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
-                    background-size: 40px 40px;
+                        linear-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+                        linear-gradient(90deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+                    background-size: 2.5% 2.5%; /* Match gridSize */
                 }
                 
                 .table-item {
                     position: absolute;
-                    width: 48px;
-                    height: 48px;
-                    border-radius: 50%;
+                    width: 5%; /* Relative to grid */
+                    height: 5.7%; /* Approximation */
+                    min-width: 44px;
+                    min-height: 44px;
+                    border-radius: 8px; /* Boxy */
                     background: var(--primary);
                     color: white;
                     display: flex;
@@ -94,8 +101,10 @@ export default class MapDesigner {
                     cursor: move;
                     user-select: none;
                     pointer-events: auto;
-                    box-shadow: 0 4px 15px rgba(0,0,0,0.4);
-                    transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.2s;
+                    box-shadow: 
+                        0 4px 0 rgba(0,0,0,0.3), /* Lego-like bottom edge */
+                        0 8px 15px rgba(0,0,0,0.4);
+                    transition: transform 0.1s, box-shadow 0.1s;
                     border: 2px solid rgba(255,255,255,0.1);
                     font-family: 'Outfit', sans-serif;
                 }
@@ -146,7 +155,7 @@ export default class MapDesigner {
                 .fixture-item {
                     position: absolute;
                     border: 2px solid rgba(255,255,255,0.15);
-                    border-radius: 8px;
+                    border-radius: 4px; /* Strictly boxy */
                     display: flex;
                     flex-direction: column;
                     align-items: center;
@@ -300,6 +309,11 @@ export default class MapDesigner {
             if (!this.isDragging) return;
             let x = ((moveEvent.clientX - rect.left) / rect.width) * 100;
             let y = ((moveEvent.clientY - rect.top) / rect.height) * 100;
+            
+            // Snap
+            x = this.snapToGrid(x);
+            y = this.snapToGrid(y);
+
             x = Math.max(0, Math.min(100 - fixture.w, x));
             y = Math.max(0, Math.min(100 - fixture.h, y));
             fixture.x = x;
@@ -330,9 +344,13 @@ export default class MapDesigner {
             let newW = mouseX - fixture.x;
             let newH = mouseY - fixture.y;
 
-            // Min size 3%, max to edge
-            newW = Math.max(3, Math.min(100 - fixture.x, newW));
-            newH = Math.max(3, Math.min(100 - fixture.y, newH));
+            // Snap resize
+            newW = this.snapToGrid(newW);
+            newH = this.snapToGrid(newH);
+
+            // Min size 2 grid units
+            newW = Math.max(this.gridSize * 2, Math.min(100 - fixture.x, newW));
+            newH = Math.max(this.gridSize * 2, Math.min(100 - fixture.y, newH));
 
             fixture.w = newW;
             fixture.h = newH;
@@ -398,9 +416,13 @@ export default class MapDesigner {
             let x = ((moveEvent.clientX - rect.left) / rect.width) * 100;
             let y = ((moveEvent.clientY - rect.top) / rect.height) * 100;
 
+            // Snap
+            x = this.snapToGrid(x - 2.5); // Center offset approx
+            y = this.snapToGrid(y - 2.8);
+
             // Bounds
-            x = Math.max(2, Math.min(96, x));
-            y = Math.max(2, Math.min(96, y));
+            x = Math.max(0, Math.min(95, x));
+            y = Math.max(0, Math.min(94, y));
 
             this.draggedTable.x = x;
             this.draggedTable.y = y;
