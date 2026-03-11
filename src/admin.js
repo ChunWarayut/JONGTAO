@@ -53,7 +53,7 @@ class AdminApp {
 
     setupRealtimeFeed() {
         if (this.sseSource) this.sseSource.close();
-        this.sseSource = new EventSource('http://localhost:3001/api/bookings/stream');
+        this.sseSource = new EventSource('/api/bookings/stream');
 
         this.sseSource.onmessage = async (e) => {
             if (e.data === 'update') {

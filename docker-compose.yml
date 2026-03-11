@@ -1,0 +1,15 @@
+version: '3.8'
+
+services:
+  web:
+    build: .
+    restart: always
+    env_file:
+      - .env
+    volumes:
+      - ./server/prisma:/app/server/prisma
+
+networks:
+  default:
+    name: kong_kong-net
+    external: true

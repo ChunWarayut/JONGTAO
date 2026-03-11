@@ -82,7 +82,25 @@ export const getAllBookings = async (req, res) => {
 
 export const getPublicBookings = async (req, res) => {
     try {
-        const bookings = await prisma.booking.findMany({
+        // Find current date in BKK
+        const bkkTimeStr = new Date().toLocaleString("en-US", { timeZone: "Asia/Bangkok" })
+        const bkkDate = new Date(bkkTimeStr)
+
+        // Extract YYYY-MM-DD for today in BKK
+        const yr = bkkDate.getFullYear()
+        const mo = String(bkkDate.getMonth() + 1).padStart(2, '0')
+        const da = String(bkkDate.getDate()).padStart(2, '0')
+
+        // BKK timezone is UTC+7, so midnight BKK is 17:00 UTC the previous day
+        // Construct the strict ISO string for the start of today in BKK
+        const startOfDayBKKText = `${yr}-${mo}-${da}T00:00:00+07:00`
+        const startOfDayBKK = new Date(startOfDayBKKText)
+
+        // Start of tomorrow is exactly 24 hours later
+        const startOfTomorrowBKK = new Date(startOfDayBKK.getTime() + 24 * 60 * 60 * 1000)
+
+        // Fetch all active bookings and filter in memory to bypass SQLite/Prisma DateTime inconsistencies
+        const allBookings = await prisma.booking.findMany({
             where: {
                 status: { not: 'cancelled' }
             },
@@ -93,8 +111,16 @@ export const getPublicBookings = async (req, res) => {
                 status: true
             }
         })
+
+        // Filter bookings that fall within the BKK today boundary
+        const bookings = allBookings.filter(b => {
+            const bDate = new Date(b.bookingDate)
+            return bDate >= startOfDayBKK && bDate < startOfTomorrowBKK
+        })
+
         res.json(bookings)
     } catch (error) {
+        console.error("getPublicBookings Error:", error)
         res.status(500).json({ error: 'Internal server error' })
     }
 }

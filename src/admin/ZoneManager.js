@@ -93,9 +93,76 @@ export default class ZoneManager {
       });
     });
 
-    // Add (placeholder)
+    // Add zone
     container.querySelector('#btn-add-zone')?.addEventListener('click', async () => {
-      await showAlert('ระบบเพิ่มโซนกำลังอยู่ในระหว่างการพัฒนา');
+      // Build a modal for adding a zone
+      const overlay = document.createElement('div');
+      overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.8);z-index:1000;display:flex;align-items:center;justify-content:center;';
+      overlay.innerHTML = `
+        <div class="glass-card" style="padding: 24px; min-width: 380px; max-width: 90vw;">
+          <h3 style="margin-bottom: 16px; text-align: center;">เพิ่มโซนใหม่</h3>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+            <div class="form-group">
+              <label style="font-size: 0.75rem;">รหัสโซน (Code)</label>
+              <input type="text" id="nz-code" class="form-control" placeholder="เช่น D, E, F" />
+            </div>
+            <div class="form-group">
+              <label style="font-size: 0.75rem;">ชื่อโซน</label>
+              <input type="text" id="nz-name" class="form-control" placeholder="เช่น Zone D - Outdoor" />
+            </div>
+            <div class="form-group">
+              <label style="font-size: 0.75rem;">สีโซน</label>
+              <input type="color" id="nz-color" value="#a855f7" style="width:100%;height:40px;border-radius:4px;border:1px solid var(--glass-border);background:transparent;cursor:pointer;" />
+            </div>
+            <div class="form-group">
+              <label style="font-size: 0.75rem;">ยอดขั้นต่ำ (Min Spend)</label>
+              <input type="number" id="nz-minspend" class="form-control" value="2000" />
+            </div>
+            <div class="form-group">
+              <label style="font-size: 0.75rem;">จำนวนโต๊ะ</label>
+              <input type="number" id="nz-tables" class="form-control" value="10" />
+            </div>
+            <div class="form-group">
+              <label style="font-size: 0.75rem;">ที่นั่ง/โต๊ะ</label>
+              <input type="number" id="nz-seats" class="form-control" value="4" />
+            </div>
+            <div class="form-group" style="grid-column: 1 / -1;">
+              <label style="font-size: 0.75rem;">ค่าพื้นที่โต๊ะเสริม</label>
+              <input type="number" id="nz-extra" class="form-control" value="500" />
+            </div>
+          </div>
+          <div style="display: flex; gap: 12px; justify-content: center; margin-top: 16px;">
+            <button id="nz-cancel" class="btn btn-ghost">ยกเลิก</button>
+            <button id="nz-confirm" class="btn btn-primary">สร้างโซน</button>
+          </div>
+        </div>
+      `;
+      document.body.appendChild(overlay);
+
+      overlay.querySelector('#nz-cancel').addEventListener('click', () => overlay.remove());
+
+      overlay.querySelector('#nz-confirm').addEventListener('click', async () => {
+        const code = overlay.querySelector('#nz-code').value.trim();
+        const name = overlay.querySelector('#nz-name').value.trim();
+        if (!code || !name) return await showAlert('กรุณากรอกรหัสและชื่อโซน');
+
+        try {
+          await client.post('/zones', {
+            code,
+            name,
+            color: overlay.querySelector('#nz-color').value,
+            minSpend: parseFloat(overlay.querySelector('#nz-minspend').value) || 0,
+            totalTables: parseInt(overlay.querySelector('#nz-tables').value) || 0,
+            seatsPerTable: parseInt(overlay.querySelector('#nz-seats').value) || 4,
+            extraTableCost: parseFloat(overlay.querySelector('#nz-extra').value) || 0
+          });
+          overlay.remove();
+          await showAlert('สร้างโซนสำเร็จ!');
+          this.render(container);
+        } catch (err) {
+          await showAlert('สร้างโซนไม่สำเร็จ: ' + err.message);
+        }
+      });
     });
   }
 }

@@ -6,6 +6,7 @@ export default class ZoneMap {
     this.onSelect = onSelect;
     this.zones = [];
     this.tables = [];
+    this.fixtures = [];
     this.bookedTableIds = [];
     this.selectedZone = null;
     this.selectedTable = null;
@@ -17,6 +18,7 @@ export default class ZoneMap {
     try {
       this.zones = await client.get('/zones');
       this.tables = await client.get('/tables');
+      this.fixtures = await client.get('/fixtures');
       // Fetch public bookings status without authentication
       const bookings = await client.get('/bookings/public-status');
       this.bookedTableIds = bookings
@@ -46,31 +48,23 @@ export default class ZoneMap {
         
         <div class="zone-grid resp-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: var(--spacing-xl); align-items: start;">
           <div class="glass-card canvas-grid-bg" style="padding: var(--spacing-xl); text-align: center; background: var(--bg-surface); border: 1px solid var(--glass-border); position: relative; overflow: hidden;">
-            <div id="svg-map-wrapper">
-              <svg viewBox="0 0 800 500" xmlns="http://www.w3.org/2000/svg" style="width: 100%; height: auto;">
-                <rect x="250" y="20" width="300" height="60" rx="12" fill="rgba(0, 255, 255, 0.05)" stroke="var(--accent-neon)" stroke-width="2" style="filter: drop-shadow(0 0 10px rgba(0, 255, 255, 0.2));" />
-                <text x="400" y="58" text-anchor="middle" fill="var(--accent-neon)" font-weight="800" font-family="'Outfit', sans-serif" style="font-size: 1.25rem; letter-spacing: 0.1em;">STAGE / เวที</text>
-                
-                <g class="zone-group" data-zone-code="A" style="cursor: pointer;">
-                  <rect x="150" y="120" width="500" height="100" rx="16" fill="#FF2D55" fill-opacity="0.15" stroke="#FF2D55" stroke-width="2" class="zone-rect" />
-                  <text x="400" y="178" text-anchor="middle" fill="white" font-weight="700" font-family="'Outfit', sans-serif">Zone A - หน้าเวที</text>
-                </g>
-
-                <g class="zone-group" data-zone-code="B" style="cursor: pointer;">
-                  <rect x="150" y="240" width="500" height="100" rx="16" fill="#32D74B" fill-opacity="0.15" stroke="#32D74B" stroke-width="2" class="zone-rect" />
-                  <text x="400" y="298" text-anchor="middle" fill="white" font-weight="700" font-family="'Outfit', sans-serif">Zone B - กลางร้าน</text>
-                </g>
-
-                <g class="zone-group" data-zone-code="C" style="cursor: pointer;">
-                  <rect x="150" y="360" width="340" height="100" rx="16" fill="#FFD60A" fill-opacity="0.15" stroke="#FFD60A" stroke-width="2" class="zone-rect" />
-                  <text x="320" y="418" text-anchor="middle" fill="white" font-weight="700" font-family="'Outfit', sans-serif">Zone C - ด้านหลัง</text>
-                </g>
-
-                <g class="zone-group" data-zone-code="VIP" style="cursor: pointer;">
-                  <rect x="510" y="360" width="140" height="100" rx="16" fill="#007AFF" fill-opacity="0.15" stroke="#007AFF" stroke-width="2" class="zone-rect" />
-                  <text x="580" y="418" text-anchor="middle" fill="white" font-weight="700" font-family="'Outfit', sans-serif">VIP</text>
-                </g>
-              </svg>
+            <div id="zone-cards-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 12px;">
+              ${this.zones.map(zone => `
+                <div class="zone-card-btn" data-zone-code="${zone.code}" style="
+                  background: ${zone.color}22;
+                  border: 2px solid ${zone.color};
+                  border-radius: 12px;
+                  padding: 20px 12px;
+                  cursor: pointer;
+                  transition: all 0.3s ease;
+                  text-align: center;
+                ">
+                  <div style="font-size: 1.1rem; font-weight: 800; color: white; font-family: 'Outfit', sans-serif; margin-bottom: 4px;">${zone.code}</div>
+                  <div style="font-size: 0.75rem; color: rgba(255,255,255,0.7);">${zone.name}</div>
+                  <div style="font-size: 0.7rem; color: ${zone.color}; margin-top: 8px; font-weight: 700; font-family: 'Outfit';">฿${zone.minSpend.toLocaleString()}</div>
+                  <div style="font-size: 0.65rem; color: rgba(255,255,255,0.4); margin-top: 2px;">${zone.availableTables}/${zone.totalTables} โต๊ะว่าง</div>
+                </div>
+              `).join('')}
             </div>
           </div>
 
@@ -90,10 +84,10 @@ export default class ZoneMap {
             linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
           background-size: 40px 40px;
         }
-        .zone-group:hover .zone-rect {
-          fill-opacity: 0.3;
-          stroke-width: 3;
-          filter: drop-shadow(0 0 8px rgba(255,255,255,0.2));
+        .zone-card-btn:hover {
+          transform: translateY(-3px);
+          box-shadow: 0 8px 25px rgba(0,0,0,0.4);
+          filter: brightness(1.2);
         }
       </style>
     `;
@@ -118,12 +112,23 @@ export default class ZoneMap {
 
         <div class="table-view-grid" style="display: grid; grid-template-columns: 1fr 380px; gap: var(--spacing-xl); align-items: start;">
           <div class="glass-card canvas-grid-bg table-map-card" style="position: relative; height: 650px; background: var(--bg-surface); overflow: hidden; border: 1px solid var(--glass-border); box-shadow: inset 0 0 50px rgba(0,0,0,0.5);">
-            <div class="stage-element">
-              <div style="font-size: 1.2rem;">STAGE</div>
-              <div style="font-size: 0.8rem; opacity: 0.7; font-weight: 500;">เวทีการแสดง</div>
+            <div id="map-fixtures-container" style="position: absolute; inset: 0; pointer-events: none; z-index: 1;">
+              ${this.fixtures.map(f => {
+      const isVertical = f.vertical;
+      const styleClass = f.style === 'accent' ? 'map-el accent' : f.style === 'red' ? 'map-el red' : f.style === 'text' ? 'map-el-text' : 'map-el';
+      let content = '';
+      if (f.icon) content += `<div style="font-size: 1.5rem; margin-bottom: 2px;">${f.icon}</div>`;
+      if (f.style === 'text') {
+        content += `<div ${isVertical ? 'class="v-text"' : ''} style="font-size: 0.8rem;">${f.label}</div>`;
+      } else {
+        content += `<div ${isVertical ? 'class="v-text"' : ''} style="font-size: ${f.label.length <= 3 ? '1.4rem' : '0.9rem'}; letter-spacing: 0.1rem;">${f.label}</div>`;
+        if (f.sublabel) content += `<div style="font-size: 0.7rem; font-weight: 400;">${f.sublabel}</div>`;
+      }
+      return `<div class="${styleClass}" style="left: ${f.x}%; top: ${f.y}%; width: ${f.w}%; height: ${f.h}%;${f.rotation ? ` transform: rotate(${f.rotation}deg);` : ''}">${content}</div>`;
+    }).join('')}
             </div>
             
-            <div id="customer-tables-container" style="position: absolute; inset: 0;">
+            <div id="customer-tables-container" style="position: absolute; inset: 0; z-index: 10;">
               ${this.tables.map(table => {
       const isCurrentZone = table.zoneId === this.selectedZone.id;
       const isBooked = this.bookedTableIds.includes(table.id);
@@ -178,29 +183,11 @@ export default class ZoneMap {
       </div>
 
       <style>
-        .stage-element {
-          position: absolute;
-          top: 40px;
-          left: 50%;
-          transform: translateX(-50%);
-          width: 50%;
-          max-width: 400px;
-          height: 80px;
-          background: rgba(0, 255, 255, 0.05);
-          border: 2px solid var(--accent-neon);
-          border-radius: 12px;
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          justify-content: center;
-          color: var(--accent-neon);
-          font-weight: 800;
-          font-family: 'Outfit', sans-serif;
-          box-shadow: 0 0 30px rgba(0, 255, 255, 0.2), inset 0 0 15px rgba(0, 255, 255, 0.1);
-          letter-spacing: 0.2rem;
-          z-index: 5;
-          pointer-events: none;
-        }
+        .map-el { position: absolute; border: 2px solid rgba(255,255,255,0.15); border-radius: 8px; display: flex; flex-direction: column; align-items: center; justify-content: center; color: rgba(255,255,255,0.6); font-weight: 700; font-family: 'Outfit', sans-serif; background: rgba(255,255,255,0.02); }
+        .map-el.accent { border-color: var(--accent-neon); color: var(--accent-neon); box-shadow: 0 0 15px rgba(0, 255, 255, 0.1), inset 0 0 10px rgba(0, 255, 255, 0.05); }
+        .map-el.red { border-color: #ff3366; color: #ff3366; box-shadow: 0 0 15px rgba(255, 51, 102, 0.1), inset 0 0 10px rgba(255, 51, 102, 0.05); }
+        .map-el-text { position: absolute; display: flex; flex-direction: column; align-items: center; justify-content: center; color: rgba(255,255,255,0.5); font-weight: 700; font-family: 'Outfit', sans-serif; border: none; background: none; }
+        .v-text { writing-mode: vertical-rl; text-orientation: mixed; letter-spacing: 0.15rem; }
 
         .table-select {
           width: 48px;
@@ -342,9 +329,9 @@ export default class ZoneMap {
   }
 
   attachZoneEvents(container) {
-    container.querySelectorAll('.zone-group').forEach(group => {
-      group.addEventListener('click', () => {
-        const code = group.getAttribute('data-zone-code');
+    container.querySelectorAll('.zone-card-btn').forEach(card => {
+      card.addEventListener('click', () => {
+        const code = card.getAttribute('data-zone-code');
         this.selectedZone = this.zones.find(z => z.code === code);
         this.renderDetailPanel(this.selectedZone, container);
       });

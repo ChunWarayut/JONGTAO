@@ -2,6 +2,11 @@ import express from 'express'
 import cors from 'cors'
 import dotenv from 'dotenv'
 import { PrismaClient } from '@prisma/client'
+import path from 'path'
+import { fileURLToPath } from 'url'
+
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = path.dirname(__filename)
 
 // Routes
 import authRoutes from './routes/auth.js'
@@ -11,6 +16,7 @@ import statsRoutes from './routes/stats.js'
 import tableRoutes from './routes/tables.js'
 import configRoutes from './routes/config.js'
 import paymentRoutes from './routes/payment.js'
+import fixtureRoutes from './routes/fixtures.js'
 
 dotenv.config()
 
@@ -38,11 +44,19 @@ app.use('/api/bookings', bookingRoutes)
 app.use('/api/stats', statsRoutes)
 app.use('/api/tables', tableRoutes)
 app.use('/api/config', configRoutes)
+app.use('/api/fixtures', fixtureRoutes)
 
 // Error handling middleware
 app.use((err, req, res, next) => {
     console.error(err.stack)
     res.status(500).json({ error: 'Something went wrong!' })
+})
+
+// Serve static frontend
+app.use(express.static(path.join(__dirname, '../dist'), { extensions: ['html'] }))
+
+app.get('*', (req, res) => {
+    res.sendFile(path.join(__dirname, '../dist/index.html'))
 })
 
 app.listen(PORT, () => {
