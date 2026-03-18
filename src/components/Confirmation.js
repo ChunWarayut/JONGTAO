@@ -6,17 +6,26 @@ export default class Confirmation {
   render(container) {
     const { customer, zone, table, guestCount, extraTable, payment, qrCode, id } = this.reservation;
 
+    const isPaid = this.reservation.paymentStatus === 'paid' || this.reservation.status === 'confirmed';
+    const isFailed = this.reservation.paymentStatus === 'failed';
+
     container.innerHTML = `
       <div class="confirmation-container animate-fade" style="text-align: center; max-width: 600px; margin: 0 auto;">
-        <div style="width: 80px; height: 80px; background: var(--success); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto var(--spacing-lg); box-shadow: 0 0 30px rgba(50, 215, 75, 0.4); border: 4px solid rgba(255,255,255,0.1);">
-          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+        <div style="width: 80px; height: 80px; background: ${isPaid ? 'var(--success)' : (isFailed ? 'var(--danger)' : 'var(--accent-gold)')}; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto var(--spacing-lg); box-shadow: 0 0 30px ${isPaid ? 'rgba(50, 215, 75, 0.4)' : (isFailed ? 'rgba(215, 50, 75, 0.4)' : 'rgba(215, 180, 50, 0.4)')}; border: 4px solid rgba(255,255,255,0.1);">
+          ${isPaid ? '<svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>' : (isFailed ? '<i data-lucide="x" style="width: 40px; height: 40px; color: white;"></i>' : '<i data-lucide="loader" class="spin" style="width: 40px; height: 40px; color: white;"></i>')}
         </div>
         
-        <h1 class="font-heading confirmation-heading" style="margin-bottom: var(--spacing-xs); font-size: 2.5rem;">${payment.method === 'promptpay' ? 'รับทราบการจ่ายเงิน!' : 'จองโต๊ะสำเร็จ!'}</h1>
+        <h1 class="font-heading confirmation-heading" style="margin-bottom: var(--spacing-xs); font-size: 2.5rem;">
+          ${isPaid ? 'จองและชำระเงินสำเร็จ!' : (isFailed ? 'การชำระเงินไม่สำเร็จ' : (payment.method === 'promptpay' ? 'รอการยืนยันเงินเข้า...' : 'จองโต๊ะสำเร็จ!'))}
+        </h1>
         <p style="color: var(--text-dim); margin-bottom: var(--spacing-xl); font-weight: 500;">
-          ${payment.method === 'promptpay'
-        ? 'เรากำลังรอยืนยันยอดเงินจาก Stripe... เมื่อสำเร็จ ระบบจะอัปเดตสถานะทันที'
-        : `รายละเอียดถูกส่งไปที่ Line ID: <span style="color: var(--accent-neon); font-weight: 700;">${customer.lineId || 'N/A'}</span>`}
+          ${isPaid 
+            ? 'ได้รับยอดเงินเรียบร้อยแล้ว เตรียมตัวมาสนุกกันได้เลย!' 
+            : (isFailed
+              ? 'เกิดข้อผิดพลาดในการชำระเงิน กรุณาติดต่อทางร้าน'
+              : (payment.method === 'promptpay'
+                ? 'เรากำลังรอยืนยันยอดเงินจาก Stripe... เมื่อสำเร็จ ระบบจะอัปเดตสถานะทันที'
+                : `รายละเอียดถูกส่งไปที่ Line ID: <span style="color: var(--accent-neon); font-weight: 700;">${customer.lineId || 'N/A'}</span>`))}
         </p>
 
         <div class="glass-card" style="padding: 0; overflow: hidden; margin-bottom: var(--spacing-xl); border-color: var(--success);">

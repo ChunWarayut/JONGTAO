@@ -19,7 +19,7 @@ export const streamBookings = (req, res) => {
     })
 }
 
-const notifyClients = () => {
+export const notifyClients = () => {
     clients.forEach(client => {
         client.write('data: update\n\n')
     })

@@ -101,6 +101,23 @@ class App {
                 if (this.currentStep === 1 && this.currentViewInstance && typeof this.currentViewInstance.render === 'function') {
                     await this.currentViewInstance.render(this.container);
                 }
+
+                // If on Step 6 (Confirmation) and we have a booking ID, refresh the status
+                if (this.currentStep === 6 && this.reservation.id) {
+                    try {
+                        const updatedBooking = await client.get(`/bookings/${this.reservation.id}`);
+                        if (updatedBooking.status !== this.reservation.status || updatedBooking.paymentStatus !== this.reservation.paymentStatus) {
+                            // Update local reservation object
+                            this.reservation.status = updatedBooking.status;
+                            this.reservation.paymentStatus = updatedBooking.paymentStatus;
+                            
+                            // Re-render the confirmation screen
+                            this.renderStep(6);
+                        }
+                    } catch (err) {
+                        console.error('Failed to refresh booking status', err);
+                    }
+                }
             }
         };
     }

@@ -1,5 +1,6 @@
 import Stripe from 'stripe'
 import { prisma } from '../index.js'
+import { notifyClients } from './bookingController.js'
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY)
 
@@ -86,6 +87,9 @@ export const handleWebhook = async (req, res) => {
                         paymentStatus: 'paid'
                     }
                 })
+                
+                // Notify clients via SSE
+                notifyClients()
                 break
             }
 
@@ -156,15 +160,9 @@ export const checkPaymentStatus = async (req, res) => {
                     paymentStatus: updatedPaymentStatus
                 }
             })
-        } else if (paymentIntent.status === 'requires_payment_method' || paymentIntent.status === 'canceled') {
-            updatedPaymentStatus = 'failed'
-
-            await prisma.booking.update({
-                where: { id: booking.id },
-                data: {
-                    paymentStatus: updatedPaymentStatus
-                }
-            })
+            
+            // Notify clients via SSE
+            notifyClients()
         }
 
         res.json({
