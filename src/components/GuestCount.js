@@ -80,24 +80,29 @@ export default class GuestCount {
         if (this.count === 2) {
             html = `
         <div style="text-align: center;">
-          <p style="color: var(--accent-neon); margin-bottom: 5px; font-weight: 700;">🤝 นโยบายการใช้บริการ 2 ท่าน</p>
+          <p style="color: var(--accent-neon); margin-bottom: 5px; font-weight: 700; display: flex; align-items: center; justify-content: center; gap: 8px;"><i data-lucide="handshake" style="width: 18px; height: 18px;"></i> นโยบายการใช้บริการ 2 ท่าน</p>
           <p style="font-size: 0.85rem; color: var(--text-main);">ทางร้านขออนุญาตจัดลูกค้า Walk-in เข้านั่งร่วมโต๊ะ (Sharing Table) เพื่อให้เป็นไปตามจำนวนขั้นต่ำที่กำหนด</p>
         </div>
       `;
         } else if (this.count <= zone.seats) {
-            html = `<p style="color: var(--success);">✅ จำนวนคนที่เหมาะสมสำหรับโซนนี้</p>`;
+            html = `<p style="color: var(--success); display: flex; align-items: center; justify-content: center; gap: 8px;"><i data-lucide="check-circle" style="width: 18px; height: 18px;"></i> จำนวนคนที่เหมาะสมสำหรับโซนนี้</p>`;
         } else if (this.count <= zone.seats + 2) {
             html = `
-        <p style="color: var(--warning); margin-bottom: 5px;">⚠️ จำนวนคนเกินจำนวนที่นั่งปกติ (${zone.seats} คน)</p>
+        <p style="color: var(--warning); margin-bottom: 5px; display: flex; align-items: center; justify-content: center; gap: 8px;"><i data-lucide="alert-triangle" style="width: 18px; height: 18px;"></i> จำนวนคนเกินจำนวนที่นั่งปกติ (${zone.seats} คน)</p>
         <p style="font-size: 0.85rem; color: var(--text-dim);">เราแนะนำให้คุณเลือก "เสริมโต๊ะ" ในขั้นตอนถัดไปเพื่อความสะดวกสบาย</p>
       `;
         } else {
             html = `
-        <p style="color: var(--danger); margin-bottom: 5px;">🛑 จำนวนคนเกินขีดจำกัดสูงสุดของโต๊ะเดี่ยว</p>
+        <p style="color: var(--danger); margin-bottom: 5px; display: flex; align-items: center; justify-content: center; gap: 8px;"><i data-lucide="octagon-x" style="width: 18px; height: 18px;"></i> จำนวนคนเกินขีดจำกัดสูงสุดของโต๊ะเดี่ยว</p>
         <p style="font-size: 0.85rem; color: var(--text-dim);">แนะนำให้จอง VIP หรือจอง 2 โต๊ะแยกกัน กรุณาติดต่อร้านโดยตรง</p>
       `;
         }
 
         box.innerHTML = html;
+
+        // Initialize Lucide icons for dynamic content
+        if (typeof lucide !== 'undefined') {
+            lucide.createIcons();
+        }
     }
 }

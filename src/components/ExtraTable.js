@@ -17,8 +17,8 @@ export default class ExtraTable {
         
         <div class="resp-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: var(--spacing-xl); align-items: start;">
           <div class="glass-card" style="padding: var(--spacing-xl);">
-            <h2 class="font-heading" style="margin-bottom: var(--spacing-md); font-size: 1.75rem;">เสริมโต๊ะ (Optional)</h2>
-            <p style="color: var(--text-dim); margin-bottom: var(--spacing-xl); font-weight: 500;">คุณต้องการเพิ่มพื้นที่นั่ง (+2 ท่าน) พิเศษหรือไม่?</p>
+            <h2 class="font-heading" style="margin-bottom: var(--spacing-md); font-size: 1.75rem;">เสริมโต๊ะ (เพิ่มได้ 1 ตัว)</h2>
+            <p style="color: var(--text-dim); margin-bottom: var(--spacing-xl); font-weight: 500;">คุณต้องการเพิ่มโต๊ะเสริม 1 ตัว (+2 ท่าน) หรือไม่?</p>
             
             <div class="extra-table-panel-inner" style="background: rgba(255, 255, 255, 0.03); padding: var(--spacing-lg); border-radius: var(--radius-lg); border: 1px solid var(--glass-border); display: flex; align-items: center; justify-content: space-between; margin-bottom: var(--spacing-xl); transition: border-color 0.3s;" id="extra-table-panel">
               <div style="display: flex; align-items: center; gap: 16px;">
@@ -41,6 +41,7 @@ export default class ExtraTable {
 
             <div style="padding: var(--spacing-lg); background: rgba(0,0,0,0.2); border-radius: var(--radius-md); font-size: 0.85rem; color: var(--text-dim);">
               <ul style="list-style: none; display: flex; flex-direction: column; gap: 8px;">
+                <li style="display: flex; gap: 10px;"><span>📌</span> <strong>เพิ่มได้สูงสุด 1 ตัวเท่านั้น</strong> ต่อการจอง 1 ครั้ง</li>
                 <li style="display: flex; gap: 10px;"><span>⚡</span> โต๊ะเสริมจะถูกวางติดกับโต๊ะหลักในโซนที่คุณเลือก</li>
                 <li style="display: flex; gap: 10px;"><span>⚡</span> การยกเลิกต้องทำก่อนเวลาเข้าร้านอย่างน้อย 2 ชม.</li>
               </ul>
@@ -56,7 +57,7 @@ export default class ExtraTable {
                 <span style="font-weight: 700;">฿${zone.minSpend.toLocaleString()}</span>
               </div>
               <div id="summary-extra" style="display: ${this.reservation.extraTable ? 'flex' : 'none'}; justify-content: space-between; align-items: center; color: var(--accent-neon);">
-                <span style="font-weight: 500;">เพิ่มโต๊ะเสริม (+1)</span>
+                <span style="font-weight: 500;">เพิ่มโต๊ะเสริม (1 ตัว)</span>
                 <span style="font-weight: 700;">+ ฿${zone.extraTableCost.toLocaleString()}</span>
               </div>
               <div style="border-top: 1px solid var(--glass-border); margin-top: 8px; padding-top: var(--spacing-lg); display: flex; justify-content: space-between; align-items: flex-end;">

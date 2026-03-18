@@ -82,22 +82,35 @@ export const getAllBookings = async (req, res) => {
 
 export const getPublicBookings = async (req, res) => {
     try {
-        // Find current date in BKK
-        const bkkTimeStr = new Date().toLocaleString("en-US", { timeZone: "Asia/Bangkok" })
-        const bkkDate = new Date(bkkTimeStr)
+        // Check if date parameter is provided
+        const dateParam = req.query.date;
 
-        // Extract YYYY-MM-DD for today in BKK
-        const yr = bkkDate.getFullYear()
-        const mo = String(bkkDate.getMonth() + 1).padStart(2, '0')
-        const da = String(bkkDate.getDate()).padStart(2, '0')
+        let startOfDayBKK, startOfTomorrowBKK;
 
-        // BKK timezone is UTC+7, so midnight BKK is 17:00 UTC the previous day
-        // Construct the strict ISO string for the start of today in BKK
-        const startOfDayBKKText = `${yr}-${mo}-${da}T00:00:00+07:00`
-        const startOfDayBKK = new Date(startOfDayBKKText)
+        if (dateParam) {
+            // Use the provided date (format: YYYY-MM-DD)
+            const [yr, mo, da] = dateParam.split('-');
+            const startOfDayBKKText = `${yr}-${mo}-${da}T00:00:00+07:00`;
+            startOfDayBKK = new Date(startOfDayBKKText);
+            startOfTomorrowBKK = new Date(startOfDayBKK.getTime() + 24 * 60 * 60 * 1000);
+        } else {
+            // Find current date in BKK (default behavior)
+            const bkkTimeStr = new Date().toLocaleString("en-US", { timeZone: "Asia/Bangkok" });
+            const bkkDate = new Date(bkkTimeStr);
 
-        // Start of tomorrow is exactly 24 hours later
-        const startOfTomorrowBKK = new Date(startOfDayBKK.getTime() + 24 * 60 * 60 * 1000)
+            // Extract YYYY-MM-DD for today in BKK
+            const yr = bkkDate.getFullYear();
+            const mo = String(bkkDate.getMonth() + 1).padStart(2, '0');
+            const da = String(bkkDate.getDate()).padStart(2, '0');
+
+            // BKK timezone is UTC+7, so midnight BKK is 17:00 UTC the previous day
+            // Construct the strict ISO string for the start of today in BKK
+            const startOfDayBKKText = `${yr}-${mo}-${da}T00:00:00+07:00`;
+            startOfDayBKK = new Date(startOfDayBKKText);
+
+            // Start of tomorrow is exactly 24 hours later
+            startOfTomorrowBKK = new Date(startOfDayBKK.getTime() + 24 * 60 * 60 * 1000);
+        }
 
         // Fetch all active bookings and filter in memory to bypass SQLite/Prisma DateTime inconsistencies
         const allBookings = await prisma.booking.findMany({
@@ -110,18 +123,18 @@ export const getPublicBookings = async (req, res) => {
                 bookingDate: true,
                 status: true
             }
-        })
+        });
 
-        // Filter bookings that fall within the BKK today boundary
+        // Filter bookings that fall within the specified date boundary
         const bookings = allBookings.filter(b => {
-            const bDate = new Date(b.bookingDate)
-            return bDate >= startOfDayBKK && bDate < startOfTomorrowBKK
-        })
+            const bDate = new Date(b.bookingDate);
+            return bDate >= startOfDayBKK && bDate < startOfTomorrowBKK;
+        });
 
-        res.json(bookings)
+        res.json(bookings);
     } catch (error) {
-        console.error("getPublicBookings Error:", error)
-        res.status(500).json({ error: 'Internal server error' })
+        console.error("getPublicBookings Error:", error);
+        res.status(500).json({ error: 'Internal server error' });
     }
 }
 
@@ -165,5 +178,28 @@ export const cancelBooking = async (req, res) => {
         res.json(booking)
     } catch (error) {
         res.status(400).json({ error: 'Could not cancel booking' })
+    }
+}
+
+export const getBookingByQR = async (req, res) => {
+    try {
+        const { qrCode } = req.params
+
+        const booking = await prisma.booking.findUnique({
+            where: { qrCode },
+            include: {
+                zone: true,
+                table: true
+            }
+        })
+
+        if (!booking) {
+            return res.status(404).json({ error: 'Booking not found' })
+        }
+
+        res.json(booking)
+    } catch (error) {
+        console.error('Get booking by QR error:', error)
+        res.status(500).json({ error: 'Internal server error' })
     }
 }

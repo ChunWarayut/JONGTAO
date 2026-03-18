@@ -52,7 +52,7 @@ model Booking {
   customerName          String
   customerPhone         String
   lineId                String?
-  arrivalTime           String
+  arrivalTime           String?
   occasion              String?
   note                  String?
   status                String   @default("pending")
@@ -67,9 +67,38 @@ model Booking {
 }
 
 model AppConfig {
-  id                   Int     @id @default(1)
-  isBookingOpen        Boolean @default(true)
-  openTime             String  @default("18:00")
-  closeTime            String  @default("02:00")
-  isBookingFeeRequired Boolean @default(true)
+  id                    Int     @id @default(1)
+  isBookingOpen         Boolean @default(true)
+  openTime              String  @default("18:00")
+  closeTime             String  @default("02:00")
+  isBookingFeeRequired  Boolean @default(true)
+  stripePublishableKey  String?
+  stripeSecretKey       String?
+}
+
+model Fixture {
+  id       Int     @id @default(autoincrement())
+  label    String
+  sublabel String?
+  icon     String?
+  x        Float
+  y        Float
+  w        Float
+  h        Float
+  style    String  @default("default")
+  vertical Boolean @default(false)
+  rotation Int?
+}
+
+model SpecialDate {
+  id               Int      @id @default(autoincrement())
+  date             DateTime @unique
+  name             String
+  description      String?
+  priceType        String   @default("normal")
+  depositRequired  Boolean  @default(true)
+  depositAmount    Float?
+  isActive         Boolean  @default(true)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
 }

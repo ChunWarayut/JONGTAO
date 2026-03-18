@@ -12,6 +12,7 @@
         rel="stylesheet">
     <link rel="stylesheet" href="/src/styles/main.css">
     <link rel="stylesheet" href="/src/styles/admin.css">
+    <script src="https://unpkg.com/lucide@latest"></script>
 </head>
 
 <body class="admin-body">
@@ -21,10 +22,14 @@
             style="display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 20px;">
             <div class="glass-card login-card" style="width: 100%; max-width: 420px; padding: var(--spacing-xl);">
                 <div class="login-header" style="text-align: center; margin-bottom: var(--spacing-xl);">
+                    <div style="width: 64px; height: 64px; background: linear-gradient(135deg, var(--accent-gold), var(--primary)); border-radius: 16px; display: flex; align-items: center; justify-content: center; margin: 0 auto var(--spacing-md); box-shadow: 0 4px 30px var(--accent-gold-glow);">
+                        <i data-lucide="wine" style="width: 32px; height: 32px; color: white;"></i>
+                    </div>
                     <h1 class="font-heading"
-                        style="font-size: 2.25rem; margin-bottom: 8px; font-weight: 800; background: linear-gradient(135deg, var(--accent-neon), var(--secondary)); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
-                        OWNER</h1>
-                    <p style="color: var(--text-dim); font-weight: 500; letter-spacing: 0.1em;">เข้าสู่ระบบจัดการ</p>
+                        style="font-size: 1.75rem; margin-bottom: 8px; font-weight: 800; background: linear-gradient(135deg, var(--accent-gold), var(--primary-light)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; letter-spacing: 0.1em;">
+                        JONGTAO</h1>
+                    <p style="color: var(--text-dim); font-weight: 500; letter-spacing: 0.05em; font-size: 0.9rem;">Management Portal</p>
+                    <p style="color: var(--text-dimmer); font-size: 0.8rem; margin-top: 4px;">เข้าสู่ระบบจัดการ</p>
                 </div>
                 <form id="login-form">
                     <div class="form-group" style="margin-bottom: var(--spacing-md);">
@@ -47,13 +52,34 @@
         <!-- Main Dashboard UI (Hidden by default) -->
         <div id="dashboard-layout" style="display: none;">
             <aside class="sidebar">
-                <div class="sidebar-brand">JONGTAO</div>
+                <div class="sidebar-brand" style="display: flex; align-items: center; gap: 10px; padding: 24px 20px; border-bottom: 1px solid rgba(212, 165, 116, 0.15);">
+                    <div style="width: 40px; height: 40px; background: linear-gradient(135deg, var(--accent-gold), var(--primary)); border-radius: 10px; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 15px var(--accent-gold-glow);">
+                        <i data-lucide="wine" style="width: 22px; height: 22px; color: white;"></i>
+                    </div>
+                    <div>
+                        <div style="font-weight: 800; font-size: 1.1rem; background: linear-gradient(135deg, var(--accent-gold), var(--primary-light)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; letter-spacing: 0.1em;">JONGTAO</div>
+                        <div style="font-size: 0.65rem; color: var(--text-dimmer); letter-spacing: 0.1em; margin-top: 2px;">MANAGEMENT</div>
+                    </div>
+                </div>
                 <nav class="sidebar-nav">
-                    <button class="nav-item active" data-view="dashboard">📊 ภาพรวมแดชบอร์ด</button>
-                    <button class="nav-item" data-view="bookings">📑 รายการจองทั้งหมด</button>
-                    <button class="nav-item" data-view="zones">📍 จัดการโซนและราคา</button>
-                    <button class="nav-item" data-view="map">🗺 ออกแบบผังร้าน</button>
-                    <button class="nav-item" data-view="settings">⚙️ ตั้งค่าระบบ</button>
+                    <button class="nav-item active" data-view="dashboard" style="display: flex; align-items: center; gap: 10px;">
+                        <i data-lucide="layout-dashboard" style="width: 18px; height: 18px;"></i> ภาพรวมแดชบอร์ด
+                    </button>
+                    <button class="nav-item" data-view="bookings" style="display: flex; align-items: center; gap: 10px;">
+                        <i data-lucide="calendar-check" style="width: 18px; height: 18px;"></i> รายการจองทั้งหมด
+                    </button>
+                    <button class="nav-item" data-view="zones" style="display: flex; align-items: center; gap: 10px;">
+                        <i data-lucide="map-pin" style="width: 18px; height: 18px;"></i> จัดการโซนและราคา
+                    </button>
+                    <button class="nav-item" data-view="special-dates" style="display: flex; align-items: center; gap: 10px;">
+                        <i data-lucide="calendar-days" style="width: 18px; height: 18px;"></i> วันพิเศษและอีเวนท์
+                    </button>
+                    <button class="nav-item" data-view="map" style="display: flex; align-items: center; gap: 10px;">
+                        <i data-lucide="map" style="width: 18px; height: 18px;"></i> ออกแบบผังร้าน
+                    </button>
+                    <button class="nav-item" data-view="settings" style="display: flex; align-items: center; gap: 10px;">
+                        <i data-lucide="settings" style="width: 18px; height: 18px;"></i> ตั้งค่าระบบ
+                    </button>
                 </nav>
                 <div class="sidebar-footer">
                     <button id="btn-logout" class="btn btn-ghost" style="width: 100%;">ออกจากระบบ</button>
@@ -76,6 +102,12 @@
     </div>
 
     <script type="module" src="/src/admin.js"></script>
+    <script>
+        // Initialize Lucide icons
+        if (typeof lucide !== 'undefined') {
+            lucide.createIcons();
+        }
+    </script>
 </body>
 
 </html>

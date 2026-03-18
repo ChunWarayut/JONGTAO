@@ -17,6 +17,7 @@ import tableRoutes from './routes/tables.js'
 import configRoutes from './routes/config.js'
 import paymentRoutes from './routes/payment.js'
 import fixtureRoutes from './routes/fixtures.js'
+import specialDateRoutes from './routes/specialDates.js'
 
 dotenv.config()
 
@@ -45,6 +46,7 @@ app.use('/api/stats', statsRoutes)
 app.use('/api/tables', tableRoutes)
 app.use('/api/config', configRoutes)
 app.use('/api/fixtures', fixtureRoutes)
+app.use('/api/special-dates', specialDateRoutes)
 
 // Error handling middleware
 app.use((err, req, res, next) => {

@@ -1,4 +1,4 @@
-import ZoneMap from './components/ZoneMap.js';
+import AllZonesTableMap from './components/AllZonesTableMap.js';
 import { showAlert, showConfirm } from './utils/dialog.js';
 import GuestCount from './components/GuestCount.js';
 import ExtraTable from './components/ExtraTable.js';
@@ -148,7 +148,7 @@ class App {
 
         switch (step) {
             case 1:
-                this.currentViewInstance = new ZoneMap(this.reservation, (zone) => {
+                this.currentViewInstance = new AllZonesTableMap(this.reservation, (zone) => {
                     this.reservation.zone = zone;
                     this.goToStep(2);
                 });

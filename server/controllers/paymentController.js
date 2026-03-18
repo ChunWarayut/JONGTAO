@@ -117,3 +117,64 @@ export const handleWebhook = async (req, res) => {
 
     res.json({ received: true })
 }
+
+export const checkPaymentStatus = async (req, res) => {
+    const { bookingId } = req.params
+
+    try {
+        const booking = await prisma.booking.findUnique({
+            where: { id: parseInt(bookingId) }
+        })
+
+        if (!booking) {
+            return res.status(404).json({ error: 'Booking not found' })
+        }
+
+        if (!booking.stripePaymentIntentId) {
+            return res.json({
+                status: booking.status,
+                paymentStatus: booking.paymentStatus,
+                message: 'No payment intent found'
+            })
+        }
+
+        // Fetch the latest status from Stripe
+        const paymentIntent = await stripe.paymentIntents.retrieve(booking.stripePaymentIntentId)
+
+        // Update database if status changed
+        let updatedStatus = booking.status
+        let updatedPaymentStatus = booking.paymentStatus
+
+        if (paymentIntent.status === 'succeeded' && booking.paymentStatus !== 'paid') {
+            updatedStatus = 'confirmed'
+            updatedPaymentStatus = 'paid'
+
+            await prisma.booking.update({
+                where: { id: booking.id },
+                data: {
+                    status: updatedStatus,
+                    paymentStatus: updatedPaymentStatus
+                }
+            })
+        } else if (paymentIntent.status === 'requires_payment_method' || paymentIntent.status === 'canceled') {
+            updatedPaymentStatus = 'failed'
+
+            await prisma.booking.update({
+                where: { id: booking.id },
+                data: {
+                    paymentStatus: updatedPaymentStatus
+                }
+            })
+        }
+
+        res.json({
+            status: updatedStatus,
+            paymentStatus: updatedPaymentStatus,
+            stripeStatus: paymentIntent.status,
+            updated: updatedStatus !== booking.status || updatedPaymentStatus !== booking.paymentStatus
+        })
+    } catch (error) {
+        console.error('Check payment status error:', error)
+        res.status(500).json({ error: 'Could not check payment status' })
+    }
+}

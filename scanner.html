@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Scan QR Code - จองโต๊ะ</title>
+  <link rel="stylesheet" href="/src/styles/main.css">
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      background: var(--bg-dark);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .scanner-container {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: var(--spacing-lg);
+      width: 100%;
+      box-sizing: border-box;
+    }
+
+    .header {
+      text-align: center;
+      margin-bottom: var(--spacing-xl);
+    }
+
+    #reader {
+      border: 2px solid var(--glass-border);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      background: var(--bg-surface);
+      max-width: 600px;
+      margin: 0 auto;
+    }
+
+    .info-box {
+      margin-top: var(--spacing-xl);
+      padding: var(--spacing-lg);
+      background: rgba(6, 182, 212, 0.1);
+      border: 1px solid var(--accent-neon);
+      border-radius: var(--radius-md);
+      text-align: center;
+    }
+
+    .loader {
+      border: 4px solid rgba(255, 255, 255, 0.1);
+      border-top: 4px solid var(--primary);
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      animation: spin 1s linear infinite;
+      margin: var(--spacing-xl) auto;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    .result-box {
+      margin-top: var(--spacing-xl);
+      display: none;
+    }
+
+    .result-box.show {
+      display: block;
+    }
+  </style>
+</head>
+<body>
+  <div class="scanner-container animate-fade">
+    <div class="header">
+      <div style="display: flex; align-items: center; justify-content: center; gap: 12px; margin-bottom: var(--spacing-md);">
+        <div style="width: 56px; height: 56px; background: linear-gradient(135deg, var(--accent-gold), var(--primary)); border-radius: 14px; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 25px var(--accent-gold-glow);">
+          <i data-lucide="scan" style="width: 28px; height: 28px; color: white;"></i>
+        </div>
+      </div>
+      <h1 class="font-heading" style="font-size: 2.2rem; margin-bottom: var(--spacing-sm); background: linear-gradient(135deg, var(--accent-gold), var(--primary-light)); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;">
+        QR Code Scanner
+      </h1>
+      <p style="color: var(--text-dim); font-size: 1rem; font-weight: 500;">
+        แสกน QR Code เพื่อตรวจสอบการจอง
+      </p>
+      <p style="color: var(--text-dimmer); font-size: 0.85rem; margin-top: var(--spacing-xs);">
+        JONGTAO Bar & Lounge
+      </p>
+    </div>
+
+    <div id="reader"></div>
+
+    <div class="info-box" style="background: rgba(212, 165, 116, 0.08); border-color: var(--accent-gold);">
+      <p style="color: var(--accent-gold); font-weight: 600; margin-bottom: var(--spacing-sm); display: flex; align-items: center; gap: 8px;">
+        <i data-lucide="lightbulb" style="width: 18px; height: 18px;"></i> คำแนะนำ
+      </p>
+      <p style="color: var(--text-dim); font-size: 0.9rem;">
+        วาง QR Code ให้อยู่ในกรอบสี่เหลี่ยม • ระบบจะแสกนอัตโนมัติ
+      </p>
+    </div>
+
+    <div id="result-box" class="result-box"></div>
+
+    <div style="text-align: center; margin-top: var(--spacing-xl);">
+      <a href="/" class="btn btn-ghost" style="display: inline-flex; align-items: center; gap: 8px;">
+        <i data-lucide="arrow-left" style="width: 16px; height: 16px;"></i> กลับหน้าแรก
+      </a>
+    </div>
+  </div>
+
+  <script>
+    // Initialize Lucide icons
+    if (typeof lucide !== 'undefined') {
+      lucide.createIcons();
+    }
+  </script>
+  <script type="module">
+    import client from './src/api/client.js';
+
+    let html5QrcodeScanner;
+
+    function onScanSuccess(decodedText, decodedResult) {
+      console.log(`QR Code detected: ${decodedText}`);
+
+      // Stop scanning
+      if (html5QrcodeScanner) {
+        html5QrcodeScanner.clear();
+      }
+
+      // Show loader
+      const resultBox = document.getElementById('result-box');
+      resultBox.innerHTML = '<div class="loader"></div>';
+      resultBox.classList.add('show');
+
+      // Fetch booking data
+      fetchBookingByQR(decodedText);
+    }
+
+    async function fetchBookingByQR(qrCode) {
+      try {
+        const booking = await client.get(`/bookings/qr/${qrCode}`);
+        displayBookingDetails(booking);
+      } catch (error) {
+        console.error('Error fetching booking:', error);
+        displayError('ไม่พบข้อมูลการจอง หรือ QR Code ไม่ถูกต้อง');
+      }
+    }
+
+    function displayBookingDetails(booking) {
+      const resultBox = document.getElementById('result-box');
+
+      const statusColors = {
+        pending: { bg: 'rgba(255, 193, 7, 0.1)', color: '#FFC107', text: 'รอยืนยัน' },
+        confirmed: { bg: 'rgba(76, 175, 80, 0.1)', color: '#4CAF50', text: 'ยืนยันแล้ว' },
+        cancelled: { bg: 'rgba(244, 67, 54, 0.1)', color: '#F44336', text: 'ยกเลิกแล้ว' },
+        completed: { bg: 'rgba(33, 150, 243, 0.1)', color: '#2196F3', text: 'เสร็จสิ้น' }
+      };
+
+      const paymentStatusColors = {
+        unpaid: { bg: 'rgba(255, 87, 34, 0.1)', color: '#FF5722', text: 'ยังไม่ชำระ' },
+        paid: { bg: 'rgba(76, 175, 80, 0.1)', color: '#4CAF50', text: 'ชำระแล้ว' },
+        refunded: { bg: 'rgba(158, 158, 158, 0.1)', color: '#9E9E9E', text: 'คืนเงินแล้ว' }
+      };
+
+      const status = statusColors[booking.status] || statusColors.pending;
+      const paymentStatus = paymentStatusColors[booking.paymentStatus] || paymentStatusColors.unpaid;
+      const bookingDate = new Date(booking.bookingDate).toLocaleDateString('th-TH', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+        weekday: 'long'
+      });
+
+      resultBox.innerHTML = `
+        <div class="glass-card" style="padding: var(--spacing-xl); animation: slideUp 0.5s ease;">
+          <div style="text-align: center; margin-bottom: var(--spacing-xl);">
+            <div style="width: 64px; height: 64px; background: linear-gradient(135deg, var(--success), #10B981); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto var(--spacing-md); box-shadow: 0 4px 25px rgba(16, 185, 129, 0.4);">
+              <i data-lucide="check-circle" style="width: 36px; height: 36px; color: white;"></i>
+            </div>
+            <h2 class="font-heading" style="font-size: 1.75rem; margin-bottom: var(--spacing-xs);">
+              พบข้อมูลการจองแล้ว!
+            </h2>
+            <div style="display: flex; gap: 8px; justify-content: center; margin-top: var(--spacing-sm); flex-wrap: wrap;">
+              <div style="padding: 8px 20px; background: ${status.bg}; color: ${status.color}; border-radius: var(--radius-full); font-weight: 700;">
+                ${status.text}
+              </div>
+              <div style="padding: 8px 20px; background: ${paymentStatus.bg}; color: ${paymentStatus.color}; border-radius: var(--radius-full); font-weight: 700; display: flex; align-items: center; gap: 6px;">
+                <i data-lucide="credit-card" style="width: 14px; height: 14px;"></i> ${paymentStatus.text}
+              </div>
+            </div>
+          </div>
+
+          <div style="display: grid; gap: var(--spacing-md); margin-bottom: var(--spacing-xl);">
+            <div style="display: flex; justify-content: space-between; padding: var(--spacing-md); background: rgba(255,255,255,0.02); border-radius: var(--radius-md);">
+              <span style="color: var(--text-dim);">หมายเลขจอง</span>
+              <span style="font-weight: 700; font-family: 'Outfit';">#${booking.id.toString().padStart(4, '0')}</span>
+            </div>
+
+            <div style="display: flex; justify-content: space-between; padding: var(--spacing-md); background: rgba(255,255,255,0.02); border-radius: var(--radius-md);">
+              <span style="color: var(--text-dim);">ชื่อผู้จอง</span>
+              <span style="font-weight: 700;">${booking.customerName}</span>
+            </div>
+
+            <div style="display: flex; justify-content: space-between; padding: var(--spacing-md); background: rgba(255,255,255,0.02); border-radius: var(--radius-md);">
+              <span style="color: var(--text-dim);">เบอร์โทรศัพท์</span>
+              <span style="font-weight: 700; font-family: 'Outfit';">${booking.customerPhone}</span>
+            </div>
+
+            <div style="display: flex; justify-content: space-between; padding: var(--spacing-md); background: rgba(255,255,255,0.02); border-radius: var(--radius-md);">
+              <span style="color: var(--text-dim);">วันที่จอง</span>
+              <span style="font-weight: 700;">${bookingDate}</span>
+            </div>
+
+            <div style="display: flex; justify-content: space-between; padding: var(--spacing-md); background: rgba(255,255,255,0.02); border-radius: var(--radius-md);">
+              <span style="color: var(--text-dim);">โซน</span>
+              <span style="font-weight: 700; color: ${booking.zone.color};">${booking.zone.name}</span>
+            </div>
+
+            ${booking.table ? `
+            <div style="display: flex; justify-content: space-between; padding: var(--spacing-md); background: rgba(255,255,255,0.02); border-radius: var(--radius-md);">
+              <span style="color: var(--text-dim);">โต๊ะ</span>
+              <span style="font-weight: 700;">${booking.table.number}</span>
+            </div>
+            ` : ''}
+
+            <div style="display: flex; justify-content: space-between; padding: var(--spacing-md); background: rgba(255,255,255,0.02); border-radius: var(--radius-md);">
+              <span style="color: var(--text-dim);">จำนวนคน</span>
+              <span style="font-weight: 700; font-family: 'Outfit';">${booking.guestCount} คน</span>
+            </div>
+
+            ${booking.extraTable ? `
+            <div style="display: flex; justify-content: space-between; padding: var(--spacing-md); background: rgba(6, 182, 212, 0.1); border: 1px solid var(--accent-neon); border-radius: var(--radius-md);">
+              <span style="color: var(--accent-neon);">โต๊ะเสริม</span>
+              <span style="font-weight: 700; color: var(--accent-neon); display: flex; align-items: center; gap: 4px;">
+                <i data-lucide="check" style="width: 16px; height: 16px;"></i> มี
+              </span>
+            </div>
+            ` : ''}
+
+            <div style="display: flex; justify-content: space-between; padding: var(--spacing-lg); background: rgba(124, 58, 237, 0.15); border: 2px solid var(--primary); border-radius: var(--radius-md); margin-top: var(--spacing-sm);">
+              <span style="color: white; font-weight: 700; font-size: 1.1rem;">ยอดชำระ</span>
+              <span style="font-weight: 800; font-size: 1.5rem; font-family: 'Outfit'; color: var(--accent-neon);">฿${booking.depositAmount.toLocaleString()}</span>
+            </div>
+          </div>
+
+          <button onclick="location.reload()" class="btn btn-primary" style="width: 100%; height: 56px; font-size: 1.1rem; font-weight: 700; display: flex; align-items: center; justify-content: center; gap: 8px;">
+            <i data-lucide="scan" style="width: 20px; height: 20px;"></i> แสกน QR ใหม่
+          </button>
+        </div>
+
+        <style>
+          @keyframes slideUp {
+            from {
+              opacity: 0;
+              transform: translateY(30px);
+            }
+            to {
+              opacity: 1;
+              transform: translateY(0);
+            }
+          }
+        </style>
+      `;
+      // Reinitialize Lucide icons after injecting HTML
+      if (typeof lucide !== 'undefined') {
+        lucide.createIcons();
+      }
+    }
+
+    function displayError(message) {
+      const resultBox = document.getElementById('result-box');
+      resultBox.innerHTML = `
+        <div class="glass-card" style="padding: var(--spacing-xl); text-align: center; border-color: var(--danger); animation: slideUp 0.5s ease;">
+          <div style="width: 64px; height: 64px; background: linear-gradient(135deg, var(--danger), #EF4444); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto var(--spacing-md); box-shadow: 0 4px 25px rgba(239, 68, 68, 0.4);">
+            <i data-lucide="x-circle" style="width: 36px; height: 36px; color: white;"></i>
+          </div>
+          <h3 class="font-heading" style="font-size: 1.5rem; color: var(--danger); margin-bottom: var(--spacing-md);">
+            ไม่พบข้อมูล
+          </h3>
+          <p style="color: var(--text-dim); margin-bottom: var(--spacing-xl);">
+            ${message}
+          </p>
+          <button onclick="location.reload()" class="btn btn-outline" style="padding: 12px 24px; font-weight: 700; display: inline-flex; align-items: center; gap: 8px;">
+            <i data-lucide="rotate-ccw" style="width: 18px; height: 18px;"></i> ลองอีกครั้ง
+          </button>
+        </div>
+      `;
+      // Reinitialize Lucide icons
+      if (typeof lucide !== 'undefined') {
+        lucide.createIcons();
+      }
+    }
+
+    function onScanFailure(error) {
+      // Ignore scan failures (happens frequently during scanning)
+    }
+
+    // Initialize scanner
+    html5QrcodeScanner = new Html5QrcodeScanner(
+      "reader",
+      {
+        fps: 10,
+        qrbox: { width: 250, height: 250 },
+        aspectRatio: 1.0
+      },
+      false
+    );
+    html5QrcodeScanner.render(onScanSuccess, onScanFailure);
+  </script>
+</body>
+</html>

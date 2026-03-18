@@ -11,20 +11,32 @@
     href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Prompt:wght@300;400;500;600&display=swap"
     rel="stylesheet">
   <link rel="stylesheet" href="/src/styles/main.css">
+  <script src="https://unpkg.com/lucide@latest"></script>
   <script src="https://js.stripe.com/v3/"></script>
 </head>
 
 <body>
   <div id="app">
-    <header class="container">
-      <nav style="display: flex; justify-content: space-between; align-items: center; padding: 24px 0;">
-        <h1 class="font-heading"
-          style="font-size: 1.75rem; background: linear-gradient(135deg, var(--accent-neon), var(--secondary)); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; font-weight: 800; letter-spacing: 0.05em; cursor: pointer;"
-          id="logo-home">
-          JONGTAO</h1>
+    <header class="container" style="border-bottom: 1px solid rgba(212, 165, 116, 0.15);">
+      <nav style="display: flex; justify-content: space-between; align-items: center; padding: 28px 0;">
+        <div id="logo-home" style="cursor: pointer; display: flex; align-items: center; gap: 12px;">
+          <div style="width: 48px; height: 48px; background: linear-gradient(135deg, var(--accent-gold), var(--primary)); border-radius: 12px; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 20px var(--accent-gold-glow);">
+            <i data-lucide="wine" style="width: 24px; height: 24px; color: white;"></i>
+          </div>
+          <div>
+            <h1 class="font-heading"
+              style="font-size: 1.5rem; background: linear-gradient(135deg, var(--accent-gold), var(--primary-light)); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; font-weight: 800; letter-spacing: 0.15em; margin: 0; line-height: 1;">
+              JONGTAO</h1>
+            <p style="font-size: 0.7rem; color: var(--text-dim); margin: 4px 0 0; letter-spacing: 0.2em; font-weight: 500;">BAR & LOUNGE</p>
+          </div>
+        </div>
         <div id="nav-actions" style="display: flex; gap: 12px; align-items: center;">
           <button id="btn-clear-booking" class="btn btn-outline"
             style="display: none; padding: 6px 12px; font-size: 0.8rem; border-color: var(--danger); color: var(--danger);">เริ่มใหม่</button>
+          <a href="/scanner.html" class="btn btn-primary"
+            style="padding: 10px 20px; font-size: 0.85rem; font-weight: 700; display: flex; align-items: center; gap: 8px;">
+            <i data-lucide="qr-code" style="width: 18px; height: 18px;"></i> Scan QR
+          </a>
           <a href="/admin.html" class="btn btn-ghost"
             style="padding: 10px 20px; font-size: 0.85rem; font-weight: 700;">ผู้จัดการ</a>
         </div>
@@ -63,15 +75,25 @@
     </main>
 
     <footer class="container"
-      style="margin-top: auto; padding: 60px 0 40px; text-align: center; color: var(--text-dim); font-size: 0.85rem; border-top: 1px solid var(--glass-border); font-weight: 500;">
-      <div
-        style="margin-bottom: 12px; font-family: 'Outfit', sans-serif; font-weight: 700; color: var(--text-muted); letter-spacing: 0.1em;">
-        JONGTAO</div>
+      style="margin-top: auto; padding: 60px 0 40px; text-align: center; color: var(--text-dim); font-size: 0.85rem; border-top: 1px solid rgba(212, 165, 116, 0.15); font-weight: 500;">
+      <div style="display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 16px;">
+        <i data-lucide="wine" style="width: 20px; height: 20px; color: var(--accent-gold);"></i>
+        <div
+          style="font-family: 'Outfit', sans-serif; font-weight: 700; background: linear-gradient(135deg, var(--accent-gold), var(--primary-light)); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; letter-spacing: 0.15em; font-size: 1.1rem;">
+          JONGTAO BAR & LOUNGE</div>
+      </div>
+      <div style="color: var(--text-dim); font-size: 0.8rem; margin-bottom: 8px;">Premium Nightlife Experience</div>
       &copy; 2026 ระบบจองโต๊ะ สงวนลิขสิทธิ์
     </footer>
   </div>
 
   <script type="module" src="/src/main.js"></script>
+  <script>
+    // Initialize Lucide icons
+    if (typeof lucide !== 'undefined') {
+      lucide.createIcons();
+    }
+  </script>
 </body>
 
 </html>

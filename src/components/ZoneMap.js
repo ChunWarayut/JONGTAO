@@ -43,7 +43,7 @@ export default class ZoneMap {
     container.innerHTML = `
       <div class="zone-map-container animate-fade">
         <h2 class="font-heading" style="margin-bottom: var(--spacing-lg); font-size: 1.5rem; display: flex; align-items: center; gap: 12px;">
-          <span style="font-size: 1.25rem;">📍</span> สำหรับจองวันที่: <span id="current-date" style="color: var(--accent-neon);">${new Date().toLocaleDateString('th-TH')}</span>
+          <i data-lucide="map-pin" style="width: 20px; height: 20px; color: var(--accent-gold);"></i> สำหรับจองวันที่: <span id="current-date" style="color: var(--accent-neon);">${new Date().toLocaleDateString('th-TH')}</span>
         </h2>
         
         <div class="zone-grid resp-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: var(--spacing-xl); align-items: start;">
@@ -70,7 +70,7 @@ export default class ZoneMap {
 
           <div id="zone-detail-panel" style="min-height: 240px;">
             <div class="glass-card" style="height: 100%; display: flex; flex-direction: column; justify-content: center; align-items: center; border-style: dashed; border-color: var(--glass-border); gap: 16px;">
-              <div style="font-size: 2.5rem; opacity: 0.3;">📍</div>
+              <i data-lucide="map-pin" style="width: 60px; height: 60px; opacity: 0.3; color: var(--text-dim);"></i>
               <p style="text-align: center; color: var(--text-dim); font-weight: 500;">กรุณาเลือกโซนที่ต้องการจองบนแผนที่</p>
             </div>
           </div>
@@ -93,6 +93,11 @@ export default class ZoneMap {
     `;
 
     this.attachZoneEvents(container);
+
+    // Initialize Lucide icons
+    if (typeof lucide !== 'undefined') {
+      lucide.createIcons();
+    }
   }
 
   renderTablesView(container) {
@@ -173,7 +178,7 @@ export default class ZoneMap {
                 </div>
               ` : `
                 <div style="text-align: center; padding: 40px 0;">
-                  <div style="font-size: 2rem; margin-bottom: 20px; opacity: 0.3;">🪑</div>
+                  <i data-lucide="armchair" style="width: 50px; height: 50px; margin-bottom: 20px; opacity: 0.3; color: var(--text-dim);"></i>
                   <p style="color: var(--text-dim); font-weight: 500; line-height: 1.5;">กรุณาคลิกเลือกเลขโต๊ะ<br>ที่คุณต้องการจองบนแผนที่</p>
                 </div>
               `}
@@ -253,6 +258,11 @@ export default class ZoneMap {
 
     this.attachTableEvents(container);
     this.initZoom(container);
+
+    // Initialize Lucide icons
+    if (typeof lucide !== 'undefined') {
+      lucide.createIcons();
+    }
   }
 
   initZoom(container) {
@@ -354,6 +364,11 @@ export default class ZoneMap {
       this.viewMode = 'tables';
       this.renderView(container);
     });
+
+    // Initialize Lucide icons for dynamic content
+    if (typeof lucide !== 'undefined') {
+      lucide.createIcons();
+    }
   }
 
   attachTableEvents(container) {

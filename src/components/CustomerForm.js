@@ -37,11 +37,6 @@ export default class CustomerForm {
             </div>
 
             <div class="form-group" style="grid-column: 1 / -1;">
-              <label class="font-heading">เวลาเข้าร้านโดยประมาณ * <span style="font-size: 0.75rem; color: var(--text-dim); font-weight: normal;">(เปิด ${window.appConfig?.openTime || '18:00'} - ${window.appConfig?.closeTime || '02:00'})</span></label>
-              <input type="time" name="arrivalTime" required min="${window.appConfig?.openTime || '18:00'}" max="${window.appConfig?.closeTime || '23:59'}" value="${this.reservation.customer.arrivalTime || window.appConfig?.openTime || '19:00'}" class="form-control-pro">
-            </div>
-
-            <div class="form-group" style="grid-column: 1 / -1;">
               <label class="font-heading">โอกาสพิเศษ (Special Occasion)</label>
               <select name="occasion" class="form-control-pro">
                 <option value="">ไม่มี</option>

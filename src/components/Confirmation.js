@@ -4,7 +4,7 @@ export default class Confirmation {
   }
 
   render(container) {
-    const { customer, zone, table, guestCount, extraTable, payment } = this.reservation;
+    const { customer, zone, table, guestCount, extraTable, payment, qrCode, id } = this.reservation;
 
     container.innerHTML = `
       <div class="confirmation-container animate-fade" style="text-align: center; max-width: 600px; margin: 0 auto;">
@@ -25,50 +25,43 @@ export default class Confirmation {
           </div>
           <div style="padding: 32px; background: white; display: flex; flex-direction: column; align-items: center; gap: 16px;">
             <div id="qr-code-placeholder" style="padding: 12px; border: 2px dashed #ddd; border-radius: 16px;">
-               <img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=BOOKING-${Math.floor(Math.random() * 100000)}" alt="QR Code" style="display: block; width: 200px; height: 200px;">
+               <img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${qrCode || 'NO-QR-CODE'}" alt="QR Code" style="display: block; width: 200px; height: 200px;">
             </div>
-            <p style="color: #666; font-size: 0.8rem; font-weight: 600;">Booking ID: #${Math.random().toString(36).substr(2, 9).toUpperCase()}</p>
+            <p style="color: #666; font-size: 0.8rem; font-weight: 600;">Booking ID: #${id ? id.toString().padStart(4, '0') : 'N/A'}</p>
           </div>
           <div style="padding: var(--spacing-xl); text-align: left; background: var(--bg-surface); border-top: 1px solid var(--glass-border);">
             <p class="font-heading" style="font-size: 0.85rem; color: var(--text-dim); margin-bottom: var(--spacing-md); text-transform: uppercase; letter-spacing: 0.1em;">สรุปรายการจอง</p>
             <div class="confirmation-summary-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; font-size: 1rem;">
               <div style="display: flex; align-items: center; gap: 10px; grid-column: span 2; border-bottom: 1px dashed rgba(255,255,255,0.1); padding-bottom: 8px;">
-                <span style="font-size: 1.2rem;">📅</span>
+                <i data-lucide="calendar" style="width: 20px; height: 20px; color: var(--accent-gold);"></i>
                 <div>
                   <div style="font-size: 0.7rem; color: var(--text-dim);">DATE / วันที่จอง</div>
                   <strong style="font-family: 'Outfit'; color: var(--accent-neon);">${new Date().toLocaleDateString('th-TH', { year: 'numeric', month: 'long', day: 'numeric' })}</strong>
                 </div>
               </div>
               <div style="display: flex; align-items: center; gap: 10px;">
-                <span style="font-size: 1.2rem;">📍</span>
+                <i data-lucide="map-pin" style="width: 20px; height: 20px; color: var(--accent-gold);"></i>
                 <div>
                   <div style="font-size: 0.7rem; color: var(--text-dim);">ZONE / โซน</div>
                   <strong style="font-family: 'Outfit';">${zone.name}</strong>
                 </div>
               </div>
               <div style="display: flex; align-items: center; gap: 10px;">
-                <span style="font-size: 1.2rem;">🪑</span>
+                <i data-lucide="armchair" style="width: 20px; height: 20px; color: var(--accent-gold);"></i>
                 <div>
                   <div style="font-size: 0.7rem; color: var(--text-dim);">TABLE / โต๊ะ</div>
                   <strong style="font-family: 'Outfit';">No. ${table ? table.number : 'N/A'}</strong>
                 </div>
               </div>
-              <div style="display: flex; align-items: center; gap: 10px;">
-                <span style="font-size: 1.2rem;">👥</span>
+              <div style="display: flex; align-items: center; gap: 10px; grid-column: span 2;">
+                <i data-lucide="users" style="width: 20px; height: 20px; color: var(--accent-gold);"></i>
                 <div>
                   <div style="font-size: 0.7rem; color: var(--text-dim);">GUESTS / จำนวนคน</div>
                   <strong style="font-family: 'Outfit';">${guestCount} ท่าน</strong>
                 </div>
               </div>
-              <div style="display: flex; align-items: center; gap: 10px;">
-                <span style="font-size: 1.2rem;">🕒</span>
-                <div>
-                  <div style="font-size: 0.7rem; color: var(--text-dim);">ARRIVAL / เวลา</div>
-                  <strong style="font-family: 'Outfit';">${customer.arrivalTime} น.</strong>
-                </div>
-              </div>
               <div style="grid-column: span 2; margin-top: 8px; padding: 12px; background: rgba(255,255,255,0.03); border-radius: var(--radius-sm); border-left: 3px solid ${extraTable ? 'var(--accent-neon)' : 'var(--text-dim)'};">
-                ${extraTable ? '<span style="color: var(--accent-neon); font-weight: 700;">✅ เสริมโต๊ะ (+1 Table Added)</span>' : '<span style="color: var(--text-dim); font-weight: 500;">❌ ไม่มีการเสริมโต๊ะ</span>'}
+                ${extraTable ? '<span style="color: var(--accent-neon); font-weight: 700; display: inline-flex; align-items: center; gap: 6px;"><i data-lucide="check-circle" style="width: 16px; height: 16px;"></i> เสริมโต๊ะ (+1 Table Added)</span>' : '<span style="color: var(--text-dim); font-weight: 500; display: inline-flex; align-items: center; gap: 6px;"><i data-lucide="x-circle" style="width: 16px; height: 16px;"></i> ไม่มีการเสริมโต๊ะ</span>'}
               </div>
             </div>
             
@@ -83,14 +76,19 @@ export default class Confirmation {
         </div>
 
         <div class="confirmation-actions" style="display: flex; gap: var(--spacing-md); margin-bottom: 40px;">
-          <button class="btn btn-ghost" style="flex: 1; height: 56px; font-weight: 700;" onclick="if(window.app){ window.app.reservation = window.app.getDefaultReservation(); window.app.goToStep(1); } else { window.location.reload(); }">
-            <span>🔄</span> เริ่มใหม่
+          <button class="btn btn-ghost" style="flex: 1; height: 56px; font-weight: 700; display: flex; align-items: center; justify-content: center; gap: 8px;" onclick="if(window.app){ window.app.reservation = window.app.getDefaultReservation(); window.app.goToStep(1); } else { window.location.reload(); }">
+            <i data-lucide="refresh-cw" style="width: 18px; height: 18px;"></i> เริ่มใหม่
           </button>
-          <button class="btn btn-primary" style="flex: 1; height: 56px; font-weight: 800; background: linear-gradient(135deg, var(--primary), var(--secondary));" onclick="window.location.href='/'">
-            <span>🏠</span> กลับหน้าแรก
+          <button class="btn btn-primary" style="flex: 1; height: 56px; font-weight: 800; background: linear-gradient(135deg, var(--primary), var(--secondary)); display: flex; align-items: center; justify-content: center; gap: 8px;" onclick="window.location.href='/'">
+            <i data-lucide="home" style="width: 18px; height: 18px;"></i> กลับหน้าแรก
           </button>
         </div>
       </div>
     `;
+
+    // Initialize Lucide icons
+    if (typeof lucide !== 'undefined') {
+      lucide.createIcons();
+    }
   }
 }
