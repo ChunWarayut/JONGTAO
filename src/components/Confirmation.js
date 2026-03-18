@@ -1,6 +1,7 @@
 export default class Confirmation {
   constructor(reservation) {
     this.reservation = reservation;
+    this.pollingInterval = null;
   }
 
   render(container) {
@@ -98,6 +99,59 @@ export default class Confirmation {
     // Initialize Lucide icons
     if (typeof lucide !== 'undefined') {
       lucide.createIcons();
+    }
+
+    // Start polling if status is not final
+    if (!isPaid && !isFailed && this.reservation.id) {
+      this.startPolling();
+    }
+  }
+
+  startPolling() {
+    // Clear any existing interval
+    if (this.pollingInterval) {
+      clearInterval(this.pollingInterval);
+    }
+
+    // Poll every 3 seconds
+    this.pollingInterval = setInterval(async () => {
+      try {
+        // We need to use the global client. It's usually imported or accessed via window.app.
+        // But since this is a class, let's assume client is somehow available.
+        // The previous code in main.js used client.get. Let's send a fetch request manually if client is not imported,
+        // to avoid missing import errors.
+        const response = await fetch(`/api/payments/check-status/${this.reservation.id}`);
+        if (!response.ok) return;
+        
+        const data = await response.json();
+        
+        if (data.updated || data.status === 'confirmed' || data.paymentStatus === 'paid' || data.paymentStatus === 'failed') {
+          // Stop polling
+          clearInterval(this.pollingInterval);
+          this.pollingInterval = null;
+
+          // Update reservation object
+          this.reservation.status = data.status;
+          this.reservation.paymentStatus = data.paymentStatus;
+          
+          if (window.app && window.app.saveToStorage) {
+            window.app.saveToStorage();
+          }
+
+          // Re-render
+          this.render(document.querySelector('#step-content'));
+        }
+      } catch (err) {
+        console.error('Polling error:', err);
+      }
+    }, 3000);
+  }
+
+  // Good practice to clean up if the user navigates away, though in SPA it might just be fine or handled by main.js
+  destroy() {
+    if (this.pollingInterval) {
+      clearInterval(this.pollingInterval);
+      this.pollingInterval = null;
     }
   }
 }
