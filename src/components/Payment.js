@@ -197,7 +197,7 @@ export default class Payment {
       </style>
     `;
 
-    this.attachEvents(container);
+    this.attachEvents(container, totalMinSpend, depositAmount);
 
     // Initialize Lucide icons
     if (typeof lucide !== 'undefined') {
@@ -205,10 +205,8 @@ export default class Payment {
     }
   }
 
-  attachEvents(container) {
+  attachEvents(container, totalMinSpend, depositAmount) {
     const { zone, extraTable } = this.reservation;
-    const isFeeRequired = window.appConfig?.isBookingFeeRequired ?? true;
-    const totalMinSpend = isFeeRequired ? zone.minSpend + (extraTable ? zone.extraTableCost : 0) : 0;
 
     // No need for payment option click handlers - always 100%
 
@@ -233,7 +231,7 @@ export default class Payment {
       this.reservation.payment = {
         method,
         depositPercent: this.depositPercent,
-        depositAmount: (totalMinSpend * this.depositPercent) / 100,
+        depositAmount: depositAmount,
         totalAmount: totalMinSpend
       };
 
