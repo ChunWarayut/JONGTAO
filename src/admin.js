@@ -189,6 +189,11 @@ class AdminApp {
                 this.viewTitle.innerText = 'ออกแบบผังร้าน';
                 this.currentViewInstance = new MapDesigner();
                 break;
+            case 'revenue':
+                this.viewTitle.innerText = 'สรุปรายได้';
+                this.currentViewInstance = new Dashboard();
+                this.currentViewInstance.period = 'month';
+                break;
             case 'settings':
                 this.viewTitle.innerText = 'ตั้งค่าระบบ';
                 this.currentViewInstance = new Settings();
