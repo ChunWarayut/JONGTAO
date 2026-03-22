@@ -10,7 +10,8 @@ export default class AllZonesTableMap {
     this.bookedTableIds = [];
     this.selectedTable = null;
     this.selectedZone = null;
-    this.currentScale = 0.7;  // เริ่มที่ 70% เพื่อเห็นภาพรวม
+    this.mobileScale = 1;
+    this.userZoomScale = 1;
     this.selectedDate = this.reservation.bookingDate || this.getTodayDate();
     this.specialDate = null;
   }
@@ -125,11 +126,8 @@ export default class AllZonesTableMap {
         </div>
 
         <!-- Map View Only -->
-        <div class="map-scroll-hint" style="display: none; text-align: center; padding: var(--spacing-sm); background: rgba(6, 182, 212, 0.15); border: 1px solid var(--accent-neon); border-radius: var(--radius-md); margin-bottom: var(--spacing-sm); font-size: 0.8rem; color: var(--accent-neon); animation: pulse 2s infinite;">
-          👆 เลื่อนซ้าย-ขวา เพื่อดูแผนผังทั้งหมด
-        </div>
-          <div class="map-view-scroll-wrapper" style="overflow-x: auto; overflow-y: auto; -webkit-overflow-scrolling: touch;">
-            <div class="glass-card canvas-grid-bg table-map-card" style="position: relative; height: 650px; min-width: 800px; background: var(--bg-surface); overflow: visible; border: 1px solid var(--glass-border); box-shadow: inset 0 0 50px rgba(0,0,0,0.5);">
+          <div class="map-scale-outer">
+            <div class="glass-card canvas-grid-bg table-map-card" style="position: relative; height: 650px; width: 800px; background: var(--bg-surface); overflow: visible; border: 1px solid var(--glass-border); box-shadow: inset 0 0 50px rgba(0,0,0,0.5);">
               <div id="map-fixtures-container" style="position: absolute; inset: 0; pointer-events: none; z-index: 1;">
               ${this.fixtures.map(f => {
                 const isVertical = f.vertical;
@@ -161,7 +159,7 @@ export default class AllZonesTableMap {
                   <div class="table-map-item ${isBooked ? 'booked' : ''} ${isSelectable ? 'selectable' : ''}"
                        data-id="${table.id}"
                        data-zone-id="${table.zoneId}"
-                       style="position: absolute; left: ${table.x}%; top: ${table.y}%; background-color: ${baseColor}; opacity: ${opacity}; cursor: ${cursor}; box-shadow: ${boxShadow}; transform: translate(-50%, -50%);">
+                       style="position: absolute; left: ${table.x}%; top: ${table.y}%; background-color: ${baseColor}; opacity: ${opacity}; cursor: ${cursor}; box-shadow: ${boxShadow};">
                     ${table.number}
                   </div>
                 `;
@@ -178,36 +176,16 @@ export default class AllZonesTableMap {
 
         <div style="text-align: center; padding: var(--spacing-md); margin-top: var(--spacing-sm); background: rgba(6, 182, 212, 0.1); border: 1px solid var(--accent-neon); border-radius: var(--radius-md);">
           <p style="color: var(--accent-neon); font-size: 0.85rem; font-weight: 600; margin-bottom: 4px; display: flex; align-items: center; justify-content: center; gap: 6px;"><i data-lucide="lightbulb" style="width: 16px; height: 16px;"></i> คำแนะนำ</p>
-          <p style="color: var(--text-dim); font-size: 0.75rem;">โต๊ะที่มีไอคอน <i data-lucide="lock" style="width: 12px; height: 12px; display: inline;"></i> หรือสีเทาถูกจองแล้ว • คลิกโต๊ะที่ต้องการเพื่อดูรายละเอียดและจอง</p>
+          <p style="color: var(--text-dim); font-size: 0.75rem;">โต๊ะที่มีไอคอน <i data-lucide="lock" style="width: 12px; height: 12px; display: inline;"></i> หรือสีเทาถูกจองแล้ว • คลิกโต๊ะที่ต้องการเพื่อดูรายละเอียดและจอง • ใช้ปุ่ม +/− เพื่อซูม</p>
         </div>
       </div>
 
       <style>
-        /* Map View Scroll Wrapper - Allow horizontal scroll on mobile */
-        .map-view-scroll-wrapper {
+        /* Map Scale Wrapper */
+        .map-scale-outer {
+          width: 100%;
+          overflow: hidden;
           border-radius: var(--radius-md);
-          scrollbar-width: thin;
-          scrollbar-color: var(--primary) rgba(255, 255, 255, 0.05);
-        }
-
-        .map-view-scroll-wrapper::-webkit-scrollbar {
-          height: 8px;
-          width: 8px;
-        }
-
-        .map-view-scroll-wrapper::-webkit-scrollbar-track {
-          background: rgba(255, 255, 255, 0.05);
-          border-radius: var(--radius-md);
-        }
-
-        .map-view-scroll-wrapper::-webkit-scrollbar-thumb {
-          background: var(--primary);
-          border-radius: var(--radius-md);
-          transition: background 0.3s ease;
-        }
-
-        .map-view-scroll-wrapper::-webkit-scrollbar-thumb:hover {
-          background: var(--primary-light);
         }
 
         /* Map View Styles */
@@ -275,44 +253,16 @@ export default class AllZonesTableMap {
           user-select: none;
         }
         .table-map-item.selectable:hover {
-          transform: translate(-50%, -50%) scale(1.15);
+          transform: scale(1.15);
           box-shadow: 0 0 20px rgba(255,255,255,0.3), 0 8px 15px rgba(0,0,0,0.5) !important;
           z-index: 15;
           border-color: rgba(255,255,255,0.4);
         }
 
-        /* Mobile responsive */
-        @media (max-width: 768px) {
-          /* Map View - Keep full width on mobile, allow scroll */
-          .map-scroll-hint {
-            display: block !important;
-          }
-
-          .map-view-scroll-wrapper {
-            max-height: 500px;
-          }
-
+        /* Mobile responsive - scale to fit like desktop */
+        @media (max-width: 820px) {
           .table-map-card {
-            /* Keep desktop size for natural scrolling */
-            min-width: 800px !important;
-            height: 650px !important;
-          }
-
-          .zoom-controls {
-            bottom: 12px !important;
-            right: 12px !important;
-          }
-
-          .zoom-btn {
-            width: 40px !important;
-            height: 40px !important;
-            font-size: 1.3rem !important;
-          }
-        }
-
-        @media (max-width: 480px) {
-          .map-view-scroll-wrapper {
-            max-height: 400px;
+            transform-origin: top left;
           }
         }
 
@@ -367,6 +317,34 @@ export default class AllZonesTableMap {
     if (typeof lucide !== 'undefined') {
       lucide.createIcons();
     }
+
+    // Apply mobile scale after render
+    this.applyMapScale(container);
+    this._resizeHandler = () => this.applyMapScale(container);
+    window.addEventListener('resize', this._resizeHandler);
+  }
+
+  applyMapScale(container) {
+    const outer = container.querySelector('.map-scale-outer');
+    const mapCard = container.querySelector('.table-map-card');
+    if (!outer || !mapCard) return;
+
+    const mapWidth = 800;
+    const mapHeight = 650;
+    const availableWidth = outer.offsetWidth || outer.parentElement?.offsetWidth || window.innerWidth;
+
+    this.mobileScale = availableWidth < mapWidth ? availableWidth / mapWidth : 1;
+    this._applyTransform(mapCard, outer, mapWidth, mapHeight);
+  }
+
+  _applyTransform(mapCard, outer, mapWidth = 800, mapHeight = 650) {
+    const combined = this.mobileScale * this.userZoomScale;
+    mapCard.style.width = `${mapWidth}px`;
+    mapCard.style.transform = `scale(${combined})`;
+    mapCard.style.transformOrigin = 'top left';
+    outer.style.height = `${mapHeight * combined}px`;
+    // Allow scroll when user zooms in beyond mobile fit
+    outer.style.overflow = this.userZoomScale > 1 ? 'auto' : 'hidden';
   }
 
   attachDatePickerEvent(container) {
@@ -405,55 +383,39 @@ export default class AllZonesTableMap {
 
   initZoom(container) {
     const mapCard = container.querySelector('.table-map-card');
-    if (!mapCard) return;
+    const outer = container.querySelector('.map-scale-outer');
+    if (!mapCard || !outer) return;
 
-    const tablesContainer = mapCard.querySelector('#customer-tables-container');
-    const fixturesContainer = mapCard.querySelector('#map-fixtures-container');
-    if (!tablesContainer) return;
-
-    let scale = this.currentScale;
-    const minScale = 0.4;  // Zoom out ได้ถึง 40%
-    const maxScale = 2;
-
-    // Use existing zoom controls from HTML instead of creating new ones
     const btnZoomIn = container.querySelector('#zoom-in');
     const btnZoomReset = container.querySelector('#zoom-reset');
     const btnZoomOut = container.querySelector('#zoom-out');
-
     if (!btnZoomIn || !btnZoomOut || !btnZoomReset) return;
 
-    const applyZoom = () => {
-      tablesContainer.style.transform = `scale(${scale})`;
-      tablesContainer.style.transformOrigin = 'center center';
-      if (fixturesContainer) {
-        fixturesContainer.style.transform = `scale(${scale})`;
-        fixturesContainer.style.transformOrigin = 'center center';
-      }
-      this.currentScale = scale;
-    };
+    const minUserZoom = 0.5;
+    const maxUserZoom = 3;
 
-    if (scale !== 1) applyZoom();
+    const applyZoom = () => this._applyTransform(mapCard, outer);
 
     btnZoomIn.addEventListener('click', (e) => {
       e.stopPropagation();
-      scale = Math.min(maxScale, scale + 0.2);
+      this.userZoomScale = Math.min(maxUserZoom, this.userZoomScale + 0.2);
       applyZoom();
     });
 
     btnZoomOut.addEventListener('click', (e) => {
       e.stopPropagation();
-      scale = Math.max(minScale, scale - 0.2);
+      this.userZoomScale = Math.max(minUserZoom, this.userZoomScale - 0.2);
       applyZoom();
     });
 
     btnZoomReset.addEventListener('click', (e) => {
       e.stopPropagation();
-      scale = 0.7;  // Reset to default 70%
+      this.userZoomScale = 1;
       applyZoom();
     });
 
     let initialDistance = 0;
-    let initialScale = 1;
+    let initialUserZoom = 1;
 
     mapCard.addEventListener('touchstart', (e) => {
       if (e.touches.length === 2) {
@@ -462,7 +424,7 @@ export default class AllZonesTableMap {
           e.touches[0].clientX - e.touches[1].clientX,
           e.touches[0].clientY - e.touches[1].clientY
         );
-        initialScale = scale;
+        initialUserZoom = this.userZoomScale;
       }
     }, { passive: false });
 
@@ -473,7 +435,7 @@ export default class AllZonesTableMap {
           e.touches[0].clientX - e.touches[1].clientX,
           e.touches[0].clientY - e.touches[1].clientY
         );
-        scale = Math.min(maxScale, Math.max(minScale, initialScale * (dist / initialDistance)));
+        this.userZoomScale = Math.min(maxUserZoom, Math.max(minUserZoom, initialUserZoom * (dist / initialDistance)));
         applyZoom();
       }
     }, { passive: false });

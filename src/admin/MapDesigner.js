@@ -46,9 +46,11 @@ export default class MapDesigner {
                     </button>
                 </div>
 
-                <div id="designer-canvas-wrapper" class="canvas-grid-bg" style="position: relative; width: 100%; height: 650px; background: var(--bg-surface); border: 1px solid var(--glass-border); border-radius: var(--radius-lg); overflow: hidden; box-shadow: inset 0 0 50px rgba(0,0,0,0.5);">
-                    <div id="fixtures-container" style="position: absolute; inset: 0; z-index: 5;"></div>
-                    <div id="tables-container" style="position: absolute; inset: 0; z-index: 10; pointer-events: none;"></div>
+                <div class="map-scale-outer-admin" style="width: 100%; overflow: hidden;">
+                  <div id="designer-canvas-wrapper" class="canvas-grid-bg" style="position: relative; width: 800px; height: 650px; background: var(--bg-surface); border: 1px solid var(--glass-border); border-radius: var(--radius-lg); overflow: hidden; box-shadow: inset 0 0 50px rgba(0,0,0,0.5); transform-origin: top left;">
+                      <div id="fixtures-container" style="position: absolute; inset: 0; z-index: 5;"></div>
+                      <div id="tables-container" style="position: absolute; inset: 0; z-index: 10; pointer-events: none;"></div>
+                  </div>
                 </div>
 
                 <div class="designer-help glass-card" style="margin-top: var(--spacing-md); color: var(--text-muted); font-size: 0.9rem; padding: var(--spacing-md); display: flex; align-items: center; gap: 12px;">
@@ -226,6 +228,29 @@ export default class MapDesigner {
         this.attachEvents(container);
         this.renderTables(container);
         this.renderFixtures(container);
+
+        // Apply mobile scale after render
+        this.applyMapScale(container);
+        window.addEventListener('resize', () => this.applyMapScale(container));
+    }
+
+    applyMapScale(container) {
+        const outer = container.querySelector('.map-scale-outer-admin');
+        const canvas = container.querySelector('#designer-canvas-wrapper');
+        if (!outer || !canvas) return;
+
+        const mapWidth = 800;
+        const mapHeight = 650;
+        const availableWidth = outer.offsetWidth || outer.parentElement?.offsetWidth || window.innerWidth;
+
+        if (availableWidth < mapWidth) {
+            const scale = availableWidth / mapWidth;
+            canvas.style.transform = `scale(${scale})`;
+            outer.style.height = `${mapHeight * scale}px`;
+        } else {
+            canvas.style.transform = '';
+            outer.style.height = '';
+        }
     }
 
     renderFixtures(container) {
