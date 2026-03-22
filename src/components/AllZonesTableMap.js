@@ -61,12 +61,11 @@ export default class AllZonesTableMap {
   async fetchSpecialDate(date) {
     try {
       this.specialDate = await client.get(`/special-dates/by-date?date=${date}`);
-      if (this.specialDate) {
-        this.reservation.specialDate = this.specialDate;
-      }
+      this.reservation.specialDate = this.specialDate || null;
     } catch (error) {
       console.error('Failed to fetch special date:', error);
       this.specialDate = null;
+      this.reservation.specialDate = null;
     }
   }
 
@@ -367,8 +366,9 @@ export default class AllZonesTableMap {
         mapCard.style.pointerEvents = 'none';
       }
 
-      // Fetch bookings for the new date
+      // Fetch bookings and special date for the new date
       await this.fetchBookingsForDate(this.selectedDate);
+      await this.fetchSpecialDate(this.selectedDate);
 
       // Re-render the entire view
       await this.render(container);
