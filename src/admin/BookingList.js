@@ -34,8 +34,12 @@ export default class BookingList {
                     <span class="status-badge status-${b.status}">${b.status}</span>
                   </td>
                   <td>
-                    <div style="font-size: 0.8rem;">${b.paymentStatus}</div>
-                    <div style="font-weight: 500;">฿${b.totalAmount.toLocaleString()}</div>
+                    ${(() => {
+                      const isFree = (b.totalAmount || 0) === 0 && (b.depositAmount || 0) === 0;
+                      if (isFree) return `<div style="color: var(--success); font-weight: 600;">🎉 จองฟรี</div>`;
+                      if (b.paymentStatus !== 'unpaid') return `<div style="color: var(--success); font-size: 0.8rem;">${b.paymentStatus}</div><div style="font-weight: 500;">฿${(b.depositAmount || b.totalAmount || 0).toLocaleString()}</div>`;
+                      return `<div style="color: #fbbf24; font-size: 0.8rem;">⏳ รอชำระ</div><div style="font-weight: 500;">฿${b.totalAmount.toLocaleString()}</div>`;
+                    })()}
                   </td>
                   <td>
                     <div style="display: flex; gap: 8px; align-items: center;">

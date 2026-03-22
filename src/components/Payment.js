@@ -44,7 +44,11 @@ export default class Payment {
           break;
       }
     } else {
-      depositAmount = isFeeRequired ? (totalMinSpend * this.depositPercent) / 100 : 0;
+      // ไม่มี special date = วันปกติ = ฟรี
+      isFeeRequired = false;
+      totalMinSpend = 0;
+      depositAmount = 0;
+      priceNote = '<span style="display: inline-flex; align-items: center; gap: 6px;"><i data-lucide="gift" style="width: 16px; height: 16px;"></i> วันนี้เข้าฟรี ไม่ต้องวางเงินล่วงหน้า</span>';
     }
 
     container.innerHTML = `

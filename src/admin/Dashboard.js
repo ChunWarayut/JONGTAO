@@ -228,7 +228,12 @@ export default class Dashboard {
                       </div>
                       <div style="text-align:right;">
                         <span class="status-badge status-${b.status}">${b.status}</span>
-                        ${b.paymentStatus !== 'unpaid' ? `<div style="font-size:0.75rem;color:var(--success);margin-top:4px;">฿${fmt(b.paymentStatus === 'deposit' ? b.depositAmount : b.totalAmount)}</div>` : ''}
+                        ${(() => {
+                          const isFree = (b.totalAmount || 0) === 0 && (b.depositAmount || 0) === 0;
+                          if (isFree) return `<div style="font-size:0.75rem;color:var(--success);margin-top:4px;font-weight:600;">🎉 จองฟรี</div>`;
+                          if (b.paymentStatus !== 'unpaid') return `<div style="font-size:0.75rem;color:var(--success);margin-top:4px;">฿${fmt(b.paymentStatus === 'deposit' ? b.depositAmount : b.totalAmount)}</div>`;
+                          return `<div style="font-size:0.75rem;color:#fbbf24;margin-top:4px;">⏳ รอชำระ</div>`;
+                        })()}
                       </div>
                     </div>
                   `).join('')}
