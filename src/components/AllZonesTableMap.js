@@ -112,17 +112,22 @@ export default class AllZonesTableMap {
             </div>
           </div>
           ${this.specialDate ? `
-            <div style="margin-top: var(--spacing-md); padding: var(--spacing-md); background: rgba(124, 58, 237, 0.15); border: 2px solid var(--primary); border-radius: var(--radius-md);">
+            <div style="margin-top: var(--spacing-md); padding: var(--spacing-md); background: rgba(239, 68, 68, 0.12); border: 2px solid var(--danger); border-radius: var(--radius-md);">
               <div style="display: flex; align-items: center; gap: var(--spacing-sm); margin-bottom: var(--spacing-xs);">
-                <i data-lucide="party-popper" style="width: 20px; height: 20px; color: var(--accent-neon);"></i>
-                <strong style="color: var(--accent-neon); font-size: 1.05rem;">${this.specialDate.name}</strong>
+                <i data-lucide="party-popper" style="width: 20px; height: 20px; color: #f87171;"></i>
+                <strong style="color: #f87171; font-size: 1.05rem;">${this.specialDate.name}</strong>
               </div>
               ${this.specialDate.description ? `<p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: var(--spacing-sm);">${this.specialDate.description}</p>` : ''}
               <div style="display: flex; flex-wrap: wrap; gap: var(--spacing-sm);">
                 ${this.getPriceTypeLabel(this.specialDate.priceType, this.specialDate.depositAmount)}
               </div>
             </div>
-          ` : ''}
+          ` : `
+            <div style="margin-top: var(--spacing-md); padding: var(--spacing-sm) var(--spacing-md); background: rgba(16, 185, 129, 0.12); border: 1px solid var(--success); border-radius: var(--radius-md); display: flex; align-items: center; gap: 8px;">
+              <i data-lucide="gift" style="width: 16px; height: 16px; color: var(--success);"></i>
+              <span style="color: var(--success); font-weight: 600; font-size: 0.9rem;">วันนี้เข้าฟรี — ไม่ต้องวางเงินล่วงหน้า</span>
+            </div>
+          `}
         </div>
 
         <!-- Map View Only -->
@@ -544,22 +549,43 @@ export default class AllZonesTableMap {
               <div style="color: white; font-weight: 700; font-size: 1rem;">${this.formatThaiDate(this.selectedDate)}</div>
             </div>
 
-            <div style="padding: var(--spacing-lg); background: rgba(255,255,255,0.03); border: 1px solid var(--glass-border); border-radius: var(--radius-md); margin-bottom: var(--spacing-xl);">
-              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--spacing-sm);">
-                <span style="color: var(--text-dim); font-weight: 500;">ราคาจองขั้นต่ำ</span>
-                <span style="font-weight: 800; font-size: 1.5rem; font-family: 'Outfit'; color: var(--accent-neon);">฿${this.selectedZone.minSpend.toLocaleString()}</span>
+            ${this.specialDate ? `
+              <div style="margin-bottom: var(--spacing-lg); padding: var(--spacing-md); background: rgba(239, 68, 68, 0.12); border: 2px solid var(--danger); border-radius: var(--radius-md);">
+                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: var(--spacing-xs);">
+                  <i data-lucide="party-popper" style="width: 18px; height: 18px; color: #f87171;"></i>
+                  <strong style="color: #f87171; font-size: 0.95rem;">${this.specialDate.name}</strong>
+                </div>
+                ${this.specialDate.description ? `<p style="color: var(--text-muted); font-size: 0.8rem; margin-bottom: var(--spacing-xs);">${this.specialDate.description}</p>` : ''}
+                <div>${this.getPriceTypeLabel(this.specialDate.priceType, this.specialDate.depositAmount)}</div>
               </div>
-              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--spacing-sm); padding-top: var(--spacing-sm); border-top: 1px solid rgba(255,255,255,0.05);">
+            ` : ''}
+
+            <div style="padding: var(--spacing-lg); background: rgba(255,255,255,0.03); border: 1px solid var(--glass-border); border-radius: var(--radius-md); margin-bottom: var(--spacing-xl);">
+              ${!this.specialDate ? `
+                <div style="text-align: center; padding: var(--spacing-sm) 0;">
+                  <div style="font-size: 2rem; margin-bottom: 4px;">🎉</div>
+                  <div style="font-weight: 800; font-size: 1.3rem; color: var(--success);">ไม่มีค่าใช้จ่าย</div>
+                  <div style="font-size: 0.8rem; color: var(--text-dim); margin-top: 4px;">วันนี้เข้าฟรี ไม่ต้องวางเงินล่วงหน้า</div>
+                </div>
+              ` : `
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--spacing-sm);">
+                  <span style="color: var(--text-dim); font-weight: 500;">ราคาจองขั้นต่ำ</span>
+                  <span style="font-weight: 800; font-size: 1.5rem; font-family: 'Outfit'; color: var(--accent-neon);">
+                    ${this.specialDate.priceType === 'custom' ? `฿${(this.specialDate.depositAmount || 0).toLocaleString()}` : `฿${this.selectedZone.minSpend.toLocaleString()}`}
+                  </span>
+                </div>
+                <div style="font-size: 0.75rem; color: var(--text-dim); margin-top: var(--spacing-sm); line-height: 1.4;">
+                  * ยอดล่วงหน้าสามารถใช้สั่งอาหาร/เครื่องดื่มในร้านได้เต็มจำนวน
+                </div>
+              `}
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-top: var(--spacing-sm); padding-top: var(--spacing-sm); border-top: 1px solid rgba(255,255,255,0.05);">
                 <span style="color: var(--text-dim); font-weight: 500;">ความจุต่อโต๊ะ</span>
                 <span style="font-weight: 700; font-size: 1.1rem; font-family: 'Outfit';">${this.selectedZone.seatsPerTable} ที่นั่ง</span>
               </div>
-              <div style="font-size: 0.75rem; color: var(--text-dim); margin-top: var(--spacing-md); line-height: 1.4;">
-                * ยอดล่วงหน้าสามารถใช้สั่งอาหาร/เครื่องดื่มในร้านได้เต็มจำนวน
-              </div>
             </div>
 
-            <button id="btn-confirm-table-popup" class="btn btn-primary" style="width: 100%; height: 56px; font-size: 1.15rem; font-weight: 700; background: linear-gradient(135deg, ${this.selectedZone.color}, var(--primary)); border-radius: var(--radius-md);">
-              ยืนยันเลือกโต๊ะนี้ <span style="margin-left: 8px;">→</span>
+            <button id="btn-confirm-table-popup" class="btn btn-primary" style="width: 100%; height: 56px; font-size: 1.15rem; font-weight: 700; background: ${!this.specialDate ? 'linear-gradient(135deg, var(--success), #059669)' : `linear-gradient(135deg, ${this.selectedZone.color}, var(--primary))`}; border-radius: var(--radius-md);">
+              ${!this.specialDate ? '🎉 จองฟรีเลย!' : 'ยืนยันเลือกโต๊ะนี้'} <span style="margin-left: 8px;">→</span>
             </button>
           </div>
         </div>
