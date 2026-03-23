@@ -8,7 +8,8 @@ export default class BookingList {
       this.container = container;
 
       container.innerHTML = `
-        <div class="admin-table-container animate-fade">
+        <!-- Desktop Table -->
+        <div class="admin-table-container animate-fade booking-desktop-table">
           <table class="admin-table">
             <thead>
               <tr>
@@ -22,46 +23,77 @@ export default class BookingList {
               </tr>
             </thead>
             <tbody>
-              ${this.bookings.map(b => `
-                <tr data-id="${b.id}">
-                  <td>
-                    <div style="font-weight: 600;">${b.customerName}</div>
-                    <div style="font-size: 0.75rem; color: var(--text-muted);">${b.customerPhone}</div>
-                  </td>
-                  <td><span style="color: var(--accent-neon);">${b.zone.code}</span></td>
-                  <td>${b.guestCount}${b.extraTable ? ' + โต๊ะเสริม' : ''}</td>
-                  <td>${b.arrivalTime} น.</td>
-                  <td>
-                    <span class="status-badge status-${b.status}">${b.status}</span>
-                  </td>
-                  <td>
-                    ${(() => {
-                      const isFree = (b.totalAmount || 0) === 0 && (b.depositAmount || 0) === 0;
-                      if (isFree) return `<div style="color: var(--success); font-weight: 600;">🎉 จองฟรี</div>`;
-                      if (b.paymentStatus === 'paid') return `<div style="color: var(--success); font-size: 0.8rem;">✓ ยืนยันแล้ว</div><div style="font-weight: 500;">฿${(b.depositAmount || b.totalAmount || 0).toLocaleString()}</div>`;
-                      if (b.paymentStatus === 'pending_verification') return `<div style="color: #f59e0b; font-size: 0.8rem; display:flex;align-items:center;gap:4px;">🧾 รอตรวจสลิป${b.slipImageUrl ? ' <span style="color:var(--success);">●</span>' : ''}</div><div style="font-weight: 500;">฿${(b.depositAmount || b.totalAmount || 0).toLocaleString()}</div>`;
-                      if (b.paymentStatus === 'slip_rejected') return `<div style="color: #ef4444; font-size: 0.8rem;">✕ ปฏิเสธสลิป</div><div style="font-weight: 500;">฿${(b.depositAmount || b.totalAmount || 0).toLocaleString()}</div>`;
-                      return `<div style="color: #fbbf24; font-size: 0.8rem;">⏳ รอชำระ</div><div style="font-weight: 500;">฿${b.totalAmount.toLocaleString()}</div>`;
-                    })()}
-                  </td>
-                  <td>
-                    <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
-                      <button class="btn-details" data-id="${b.id}" style="padding: 4px 8px; font-size: 0.75rem; border-radius: 4px; border: 1px solid var(--glass-border); background: rgba(255,255,255,0.05); color: white; cursor: pointer;">รายละเอียด</button>
-                      <select class="status-update" data-id="${b.id}" style="padding: 4px; background: var(--bg-dark); color: white; border: 1px solid var(--glass-border); border-radius: 4px;">
-                        <option value="pending" ${b.status === 'pending' ? 'selected' : ''}>รอดำเนินการ</option>
-                        <option value="confirmed" ${b.status === 'confirmed' ? 'selected' : ''}>ยืนยันแล้ว</option>
-                        <option value="checked-in" ${b.status === 'checked-in' ? 'selected' : ''}>เช็คอินแล้ว</option>
-                        <option value="completed" ${b.status === 'completed' ? 'selected' : ''}>เสร็จสิ้น</option>
-                        <option value="cancelled" ${b.status === 'cancelled' ? 'selected' : ''}>ยกเลิก</option>
-                      </select>
-                    </div>
-                  </td>
-                </tr>
-              `).join('')}
+              ${this.bookings.map(b => this._tableRow(b)).join('')}
             </tbody>
           </table>
           ${this.bookings.length === 0 ? '<p style="padding: 40px; text-align: center; color: var(--text-muted);">ยังไม่มีรายการจอง</p>' : ''}
         </div>
+
+        <!-- Mobile Cards -->
+        <div class="booking-mobile-cards animate-fade">
+          ${this.bookings.length === 0
+            ? '<p style="padding: 40px; text-align: center; color: var(--text-muted);">ยังไม่มีรายการจอง</p>'
+            : this.bookings.map(b => this._mobileCard(b)).join('')}
+        </div>
+
+        <style>
+          .booking-mobile-cards { display: none; flex-direction: column; gap: 12px; }
+          @media (max-width: 768px) {
+            .booking-desktop-table { display: none; }
+            .booking-mobile-cards { display: flex; }
+          }
+          .booking-card {
+            background: rgba(12,3,3,0.9);
+            border: 1px solid rgba(212,32,32,0.2);
+            border-radius: 14px;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+          }
+          .booking-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 8px;
+          }
+          .booking-card-footer {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            padding-top: 10px;
+            border-top: 1px solid rgba(255,255,255,0.06);
+          }
+          .booking-card-footer select {
+            flex: 1;
+            padding: 8px 10px;
+            background: rgba(255,255,255,0.05);
+            color: white;
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 8px;
+            font-size: 0.85rem;
+            font-family: inherit;
+          }
+          .booking-card-footer .btn-details {
+            padding: 8px 14px;
+            font-size: 0.82rem;
+            border-radius: 8px;
+            border: 1px solid rgba(212,32,32,0.4);
+            background: rgba(212,32,32,0.1);
+            color: white;
+            cursor: pointer;
+            white-space: nowrap;
+            font-family: inherit;
+          }
+          .booking-info-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.85rem;
+          }
+          .booking-info-row .lbl { color: rgba(255,255,255,0.4); }
+          .booking-info-row .val { font-weight: 600; color: white; }
+        </style>
 
         <!-- Booking Detail Modal -->
         <div id="booking-detail-modal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 1000; align-items: center; justify-content: center; backdrop-filter: blur(4px);">
@@ -79,6 +111,97 @@ export default class BookingList {
     } catch (error) {
       container.innerHTML = `<p class="error">โหลดข้อมูลผิดพลาด: ${error.message}</p>`;
     }
+  }
+
+  _paymentLabel(b) {
+    const isFree = (b.totalAmount || 0) === 0 && (b.depositAmount || 0) === 0;
+    const amt = `฿${(b.depositAmount || b.totalAmount || 0).toLocaleString()}`;
+    if (isFree) return { text: '🎉 จองฟรี', color: 'var(--success)' };
+    if (b.paymentStatus === 'paid') return { text: `✓ ชำระแล้ว`, sub: amt, color: 'var(--success)' };
+    if (b.paymentStatus === 'pending_verification') return { text: `🧾 รอตรวจสลิป`, sub: amt, color: '#f59e0b' };
+    if (b.paymentStatus === 'slip_rejected') return { text: `✕ ปฏิเสธสลิป`, sub: amt, color: '#ef4444' };
+    return { text: '⏳ รอชำระ', sub: amt, color: '#fbbf24' };
+  }
+
+  _statusLabel(status) {
+    const map = {
+      pending: 'รอดำเนินการ', confirmed: 'ยืนยันแล้ว',
+      'checked-in': 'เช็คอินแล้ว', completed: 'เสร็จสิ้น', cancelled: 'ยกเลิก'
+    };
+    return map[status] || status;
+  }
+
+  _tableRow(b) {
+    const pay = this._paymentLabel(b);
+    return `
+      <tr data-id="${b.id}">
+        <td>
+          <div style="font-weight: 600;">${b.customerName}</div>
+          <div style="font-size: 0.75rem; color: var(--text-muted);">${b.customerPhone}</div>
+        </td>
+        <td><span style="color: var(--accent-neon);">${b.zone.code}</span></td>
+        <td>${b.guestCount}${b.extraTable ? ' + โต๊ะเสริม' : ''}</td>
+        <td>${b.arrivalTime} น.</td>
+        <td><span class="status-badge status-${b.status}">${this._statusLabel(b.status)}</span></td>
+        <td>
+          <div style="color:${pay.color}; font-size:0.8rem;">${pay.text}</div>
+          ${pay.sub ? `<div style="font-weight:500;">${pay.sub}</div>` : ''}
+        </td>
+        <td>
+          <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+            <button class="btn-details" data-id="${b.id}" style="padding: 4px 8px; font-size: 0.75rem; border-radius: 4px; border: 1px solid var(--glass-border); background: rgba(255,255,255,0.05); color: white; cursor: pointer;">รายละเอียด</button>
+            <select class="status-update" data-id="${b.id}" style="padding: 4px; background: var(--bg-dark); color: white; border: 1px solid var(--glass-border); border-radius: 4px;">
+              <option value="pending" ${b.status === 'pending' ? 'selected' : ''}>รอดำเนินการ</option>
+              <option value="confirmed" ${b.status === 'confirmed' ? 'selected' : ''}>ยืนยันแล้ว</option>
+              <option value="checked-in" ${b.status === 'checked-in' ? 'selected' : ''}>เช็คอินแล้ว</option>
+              <option value="completed" ${b.status === 'completed' ? 'selected' : ''}>เสร็จสิ้น</option>
+              <option value="cancelled" ${b.status === 'cancelled' ? 'selected' : ''}>ยกเลิก</option>
+            </select>
+          </div>
+        </td>
+      </tr>`;
+  }
+
+  _mobileCard(b) {
+    const pay = this._paymentLabel(b);
+    const bookingDate = b.bookingDate
+      ? new Date(b.bookingDate).toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: 'numeric' })
+      : '-';
+    return `
+      <div class="booking-card">
+        <div class="booking-card-header">
+          <div>
+            <div style="font-weight: 700; font-size: 1rem; color: white;">${b.customerName}</div>
+            <div style="font-size: 0.8rem; color: rgba(255,255,255,0.4); margin-top: 2px;">${b.customerPhone}</div>
+          </div>
+          <div style="text-align: right;">
+            <span class="status-badge status-${b.status}" style="font-size: 0.72rem;">${this._statusLabel(b.status)}</span>
+          </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px;">
+          <div class="booking-info-row"><span class="lbl">โซน</span><span class="val" style="color: var(--accent-neon);">${b.zone.name}</span></div>
+          <div class="booking-info-row"><span class="lbl">โต๊ะ</span><span class="val">${b.table?.number || '-'}</span></div>
+          <div class="booking-info-row"><span class="lbl">จำนวนคน</span><span class="val">${b.guestCount} คน${b.extraTable ? ' +เสริม' : ''}</span></div>
+          <div class="booking-info-row"><span class="lbl">เวลา</span><span class="val">${b.arrivalTime} น.</span></div>
+          <div class="booking-info-row"><span class="lbl">วันที่</span><span class="val">${bookingDate}</span></div>
+          <div class="booking-info-row">
+            <span class="lbl">ชำระเงิน</span>
+            <span style="font-size: 0.82rem; font-weight: 700; color: ${pay.color};">${pay.text}${pay.sub ? ' ' + pay.sub : ''}</span>
+          </div>
+        </div>
+
+        <div class="booking-card-footer">
+          <button class="btn-details" data-id="${b.id}">รายละเอียด</button>
+          <select class="status-update" data-id="${b.id}">
+            <option value="pending" ${b.status === 'pending' ? 'selected' : ''}>รอดำเนินการ</option>
+            <option value="confirmed" ${b.status === 'confirmed' ? 'selected' : ''}>ยืนยันแล้ว</option>
+            <option value="checked-in" ${b.status === 'checked-in' ? 'selected' : ''}>เช็คอินแล้ว</option>
+            <option value="completed" ${b.status === 'completed' ? 'selected' : ''}>เสร็จสิ้น</option>
+            <option value="cancelled" ${b.status === 'cancelled' ? 'selected' : ''}>ยกเลิก</option>
+          </select>
+        </div>
+      </div>`;
   }
 
   attachEvents(container) {
