@@ -27,11 +27,9 @@ const PORT = process.env.PORT || 3001 // Using 3001 as seen in .env
 
 app.use(cors())
 
-// Stripe webhook needs raw body, so we handle it before express.json()
-// The paymentRoutes handles its own express.raw for the webhook endpoint
 app.use('/api/payments', paymentRoutes)
 
-app.use(express.json())
+app.use(express.json({ limit: '15mb' }))
 
 // Health check
 app.get('/health', (req, res) => {

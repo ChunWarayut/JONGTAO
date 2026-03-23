@@ -59,8 +59,17 @@ export const createSpecialDate = async (req, res) => {
     const startOfDayBKKText = `${yr}-${mo}-${da}T00:00:00+07:00`
     const targetDate = new Date(startOfDayBKKText)
 
-    const specialDate = await prisma.specialDate.create({
-      data: {
+    const specialDate = await prisma.specialDate.upsert({
+      where: { date: targetDate },
+      update: {
+        name,
+        description,
+        priceType: priceType || 'normal',
+        depositRequired: depositRequired !== false,
+        depositAmount: depositAmount ? parseFloat(depositAmount) : null,
+        isActive: true
+      },
+      create: {
         date: targetDate,
         name,
         description,

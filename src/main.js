@@ -84,8 +84,19 @@ class App {
             return;
         }
 
-        // Apply config to global window so components can access without prop drilling
         window.appConfig = this.config;
+
+        // Read ?date= from URL and lock it
+        const urlParams = new URLSearchParams(window.location.search);
+        const dateParam = urlParams.get('date');
+        if (dateParam && /^\d{4}-\d{2}-\d{2}$/.test(dateParam)) {
+            // Only apply if no booking in progress
+            if (!this.reservation.id && !this.reservation.zone) {
+                this.reservation.bookingDate = dateParam;
+                this.reservation.lockedDate = true;
+                this.currentStep = 1;
+            }
+        }
 
         this.setupRealtimeFeed();
         this.goToStep(this.currentStep);
@@ -236,7 +247,6 @@ class App {
         </style>
       `;
 
-            // Transform reservation to API format
             const payload = {
                 zoneId: this.reservation.zone.id,
                 tableId: this.reservation.tableId,
@@ -250,7 +260,7 @@ class App {
                 arrivalTime: this.reservation.customer.arrivalTime || '19:00',
                 occasion: this.reservation.customer.occasion,
                 note: this.reservation.customer.note,
-                bookingDate: new Date().toISOString(),
+                bookingDate: this.reservation.bookingDate ? new Date(this.reservation.bookingDate + 'T00:00:00').toISOString() : new Date().toISOString(),
                 paymentMethod: this.reservation.payment.method
             };
 
@@ -258,48 +268,14 @@ class App {
             this.reservation.id = result.id;
             this.reservation.qrCode = result.qrCode;
 
-            // Handle Stripe PromptPay payment
-            if (this.reservation.payment.method === 'promptpay' && this.reservation.payment.depositAmount > 0) {
-                this.container.innerHTML = `
-                <div style="text-align: center; padding: 100px 0;">
-                  <div class="loader" style="margin: 0 auto 20px;"></div>
-                  <p>กำลังเตรียมช่องทางชำระเงิน (PromptPay)...</p>
-                </div>
-              `;
-
-                // 1. Create PaymentIntent on server
-                const stripeData = await client.post('/payments/create-intent', {
-                    bookingId: result.id,
-                    amount: this.reservation.payment.depositAmount
+            // Upload slip if exists
+            if (this.reservation.slipFile && this.reservation.payment.method === 'bank_transfer') {
+                this.container.querySelector('p').textContent = 'กำลังอัปโหลดสลิป...';
+                await fetch(`/api/payments/upload-slip/${result.id}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ slipImage: this.reservation.slipFile })
                 });
-
-                // 2. Re-fetch config to ensure we have the latest publishable key
-                const freshConfig = await client.get('/config');
-                const publishableKey = freshConfig.stripePublishableKey;
-                if (!publishableKey) {
-                    throw new Error('Stripe publishable key not configured');
-                }
-                const stripe = Stripe(publishableKey);
-
-                // 3. Handle next action for PromptPay (QR Code)
-                const { error, paymentIntent } = await stripe.confirmPromptPayPayment(stripeData.clientSecret, {
-                    payment_method: {
-                        promptpay: {},
-                        billing_details: {
-                            name: this.reservation.customer.name || 'Unknown',
-                            email: this.reservation.customer.email
-                        }
-                    }
-                });
-
-                if (error) {
-                    throw new Error(error.message);
-                }
-
-                // After confirmation, Stripe will show the QR code in a redirect or we can handle it.
-                // For PromptPay, confirmPromptPayPayment might redirect or open a modal.
-                // If it returns, we Proceed to success screen where we wait for webhook.
-                this.reservation.stripePaymentIntentId = paymentIntent.id;
             }
 
             this.clearStorage();

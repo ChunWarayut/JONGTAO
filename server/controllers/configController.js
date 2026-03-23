@@ -20,10 +20,7 @@ export const getConfig = async (req, res) => {
             })
         }
 
-        res.json({
-            ...config,
-            stripePublishableKey: process.env.STRIPE_PUBLISHABLE_KEY
-        })
+        res.json(config)
     } catch (error) {
         console.error('Get config error:', error)
         res.status(500).json({ error: 'Internal server error' })
@@ -31,7 +28,7 @@ export const getConfig = async (req, res) => {
 }
 
 export const updateConfig = async (req, res) => {
-    const { isBookingOpen, openTime, closeTime, isBookingFeeRequired } = req.body
+    const { isBookingOpen, openTime, closeTime, isBookingFeeRequired, bankName, bankAccountNumber, bankAccountName, promptPayNumber } = req.body
 
     try {
         const config = await prisma.appConfig.update({
@@ -40,7 +37,11 @@ export const updateConfig = async (req, res) => {
                 isBookingOpen,
                 openTime,
                 closeTime,
-                isBookingFeeRequired
+                isBookingFeeRequired,
+                bankName,
+                bankAccountNumber,
+                bankAccountName,
+                promptPayNumber
             }
         })
         res.json(config)

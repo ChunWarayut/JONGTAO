@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>จองโต๊ะ - Table Reservation</title>
+  <title>จองโต๊ะ - Mongkol Bar</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link
@@ -12,23 +12,16 @@
     rel="stylesheet">
   <link rel="stylesheet" href="/src/styles/main.css">
   <script src="https://unpkg.com/lucide@latest"></script>
-  <script src="https://js.stripe.com/v3/"></script>
 </head>
 
 <body>
   <div id="app">
-    <header class="container" style="border-bottom: 1px solid rgba(212, 165, 116, 0.15);">
+    <header class="container" style="border-bottom: 1px solid rgba(212, 32, 32, 0.2);">
       <nav style="display: flex; justify-content: space-between; align-items: center; padding: 28px 0;">
-        <div id="logo-home" style="cursor: pointer; display: flex; align-items: center; gap: 12px;">
-          <div style="width: 48px; height: 48px; background: linear-gradient(135deg, var(--accent-gold), var(--primary)); border-radius: 12px; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 20px var(--accent-gold-glow);">
-            <i data-lucide="wine" style="width: 24px; height: 24px; color: white;"></i>
-          </div>
-          <div>
-            <h1 class="font-heading"
-              style="font-size: 1.5rem; background: linear-gradient(135deg, var(--accent-gold), var(--primary-light)); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; font-weight: 800; letter-spacing: 0.15em; margin: 0; line-height: 1;">
-              JONGTAO</h1>
-            <p style="font-size: 0.7rem; color: var(--text-dim); margin: 4px 0 0; letter-spacing: 0.2em; font-weight: 500;">BAR & LOUNGE</p>
-          </div>
+        <div id="logo-home"
+          style="cursor: pointer; padding: 8px 16px; background: white; border-radius: 10px; display: inline-flex; align-items: center; box-shadow: 0 2px 20px rgba(212,32,32,0.3);">
+          <img src="/src/assets/logo-black.png" alt="Mongkol Bar"
+            style="height: 44px; object-fit: contain; display: block;">
         </div>
         <div id="nav-actions" style="display: flex; gap: 12px; align-items: center;">
           <button id="btn-clear-booking" class="btn btn-outline"
@@ -75,12 +68,9 @@
     </main>
 
     <footer class="container"
-      style="margin-top: auto; padding: 60px 0 40px; text-align: center; color: var(--text-dim); font-size: 0.85rem; border-top: 1px solid rgba(212, 165, 116, 0.15); font-weight: 500;">
-      <div style="display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 16px;">
-        <i data-lucide="wine" style="width: 20px; height: 20px; color: var(--accent-gold);"></i>
-        <div
-          style="font-family: 'Outfit', sans-serif; font-weight: 700; background: linear-gradient(135deg, var(--accent-gold), var(--primary-light)); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; letter-spacing: 0.15em; font-size: 1.1rem;">
-          JONGTAO BAR & LOUNGE</div>
+      style="margin-top: auto; padding: 60px 0 40px; text-align: center; color: var(--text-dim); font-size: 0.85rem; border-top: 1px solid rgba(212, 32, 32, 0.2); font-weight: 500;">
+      <div style="display: flex; align-items: center; justify-content: center; margin-bottom: 16px;">
+        <img src="/src/assets/logo-white.png" alt="Mongkol Bar" style="height: 48px; object-fit: contain;">
       </div>
       <div style="color: var(--text-dim); font-size: 0.8rem; margin-bottom: 8px;">Premium Nightlife Experience</div>
       &copy; 2026 ระบบจองโต๊ะ สงวนลิขสิทธิ์

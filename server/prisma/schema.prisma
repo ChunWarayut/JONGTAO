@@ -59,7 +59,8 @@ model Booking {
   qrCode                String   @unique
   paymentMethod         String?
   paymentStatus         String   @default("unpaid")
-  stripePaymentIntentId String?  @unique
+  slipImageUrl          String?
+  slipRejectReason      String?
   bookingDate           DateTime
 
   createdAt DateTime @default(now())
@@ -72,8 +73,10 @@ model AppConfig {
   openTime              String  @default("18:00")
   closeTime             String  @default("02:00")
   isBookingFeeRequired  Boolean @default(true)
-  stripePublishableKey  String?
-  stripeSecretKey       String?
+  bankName              String?
+  bankAccountNumber     String?
+  bankAccountName       String?
+  promptPayNumber       String?
 }
 
 model Fixture {

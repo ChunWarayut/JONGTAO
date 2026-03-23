@@ -94,6 +94,16 @@ export default class AllZonesTableMap {
         </h2>
 
         <div class="date-picker-container glass-card" style="margin-bottom: var(--spacing-lg); padding: var(--spacing-lg); background: rgba(255, 255, 255, 0.02);">
+          ${this.reservation.lockedDate ? `
+          <div style="display: flex; align-items: center; gap: 12px; padding: 14px 18px; background: rgba(212, 32, 32, 0.12); border: 2px solid var(--primary); border-radius: var(--radius-md);">
+            <i data-lucide="calendar-check" style="width: 22px; height: 22px; color: var(--primary); flex-shrink: 0;"></i>
+            <div>
+              <div style="font-size: 0.75rem; color: var(--text-muted); font-weight: 600; letter-spacing: 0.05em; margin-bottom: 2px;">วันที่จองที่กำหนดสำหรับ Event นี้</div>
+              <div style="font-size: 1.1rem; font-weight: 700; color: white;">${this.formatThaiDate(this.selectedDate)}</div>
+            </div>
+            <i data-lucide="lock" style="width: 16px; height: 16px; color: var(--text-muted); margin-left: auto; flex-shrink: 0;"></i>
+          </div>
+          ` : `
           <label for="booking-date" style="display: block; margin-bottom: var(--spacing-sm); font-weight: 600; color: var(--text-muted); font-size: 0.9rem; display: flex; align-items: center; gap: 8px;">
             <i data-lucide="calendar" style="width: 16px; height: 16px;"></i> เลือกวันที่จอง
           </label>
@@ -110,6 +120,7 @@ export default class AllZonesTableMap {
               ${this.formatThaiDate(this.selectedDate)}
             </div>
           </div>
+          `}
           ${this.specialDate ? `
             <div style="margin-top: var(--spacing-md); padding: var(--spacing-md); background: rgba(239, 68, 68, 0.12); border: 2px solid var(--danger); border-radius: var(--radius-md);">
               <div style="display: flex; align-items: center; gap: var(--spacing-sm); margin-bottom: var(--spacing-xs);">
@@ -122,9 +133,15 @@ export default class AllZonesTableMap {
               </div>
             </div>
           ` : `
-            <div style="margin-top: var(--spacing-md); padding: var(--spacing-sm) var(--spacing-md); background: rgba(16, 185, 129, 0.12); border: 1px solid var(--success); border-radius: var(--radius-md); display: flex; align-items: center; gap: 8px;">
-              <i data-lucide="gift" style="width: 16px; height: 16px; color: var(--success);"></i>
-              <span style="color: var(--success); font-weight: 600; font-size: 0.9rem;">วันนี้เข้าฟรี — ไม่ต้องวางเงินล่วงหน้า</span>
+            <div style="margin-top: var(--spacing-md); padding: var(--spacing-md); background: rgba(16, 185, 129, 0.12); border: 1px solid var(--success); border-radius: var(--radius-md);">
+              <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
+                <i data-lucide="gift" style="width: 16px; height: 16px; color: var(--success);"></i>
+                <span style="color: var(--success); font-weight: 700; font-size: 0.95rem;">จองฟรี ไม่มีค่าใช้จ่าย</span>
+              </div>
+              <div style="display: flex; align-items: flex-start; gap: 6px; color: #fbbf24; font-size: 0.82rem; line-height: 1.5;">
+                <i data-lucide="clock-alert" style="width: 14px; height: 14px; margin-top: 2px; flex-shrink: 0;"></i>
+                <span>รับโต๊ะก่อน 21:00 น. — หลัง 21:00 น. ระบบจะยกเลิกโต๊ะโดยอัตโนมัติ</span>
+              </div>
             </div>
           `}
         </div>
@@ -564,8 +581,12 @@ export default class AllZonesTableMap {
               ${!this.specialDate ? `
                 <div style="text-align: center; padding: var(--spacing-sm) 0;">
                   <div style="font-size: 2rem; margin-bottom: 4px;">🎉</div>
-                  <div style="font-weight: 800; font-size: 1.3rem; color: var(--success);">ไม่มีค่าใช้จ่าย</div>
-                  <div style="font-size: 0.8rem; color: var(--text-dim); margin-top: 4px;">วันนี้เข้าฟรี ไม่ต้องวางเงินล่วงหน้า</div>
+                  <div style="font-weight: 800; font-size: 1.3rem; color: var(--success);">จองฟรี ไม่มีค่าใช้จ่าย</div>
+                  <div style="font-size: 0.8rem; color: var(--text-dim); margin-top: 4px;">ไม่ต้องวางเงินล่วงหน้า</div>
+                </div>
+                <div style="margin-top: var(--spacing-md); padding: var(--spacing-sm) var(--spacing-md); background: rgba(251, 191, 36, 0.1); border: 1px solid rgba(251, 191, 36, 0.4); border-radius: var(--radius-sm); display: flex; align-items: flex-start; gap: 6px;">
+                  <i data-lucide="clock-alert" style="width: 14px; height: 14px; color: #fbbf24; margin-top: 2px; flex-shrink: 0;"></i>
+                  <span style="color: #fbbf24; font-size: 0.78rem; line-height: 1.5;">รับโต๊ะก่อน 21:00 น. — หลัง 21:00 น. ระบบจะยกเลิกโต๊ะโดยอัตโนมัติ</span>
                 </div>
               ` : `
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--spacing-sm);">
