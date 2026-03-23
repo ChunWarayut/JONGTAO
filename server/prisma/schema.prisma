@@ -35,48 +35,47 @@ model Table {
   y        Float     @default(0)
   status   String    @default("active")
   zoneId   Int
-  zone     Zone      @relation(fields: [zoneId], references: [id])
   bookings Booking[]
+  zone     Zone      @relation(fields: [zoneId], references: [id])
 }
 
 model Booking {
-  id                    Int      @id @default(autoincrement())
-  zoneId                Int
-  zone                  Zone     @relation(fields: [zoneId], references: [id])
-  tableId               Int?
-  table                 Table?   @relation(fields: [tableId], references: [id])
-  guestCount            Int
-  extraTable            Boolean  @default(false)
-  totalAmount           Float
-  depositAmount         Float
-  customerName          String
-  customerPhone         String
-  lineId                String?
-  arrivalTime           String?
-  occasion              String?
-  note                  String?
-  status                String   @default("pending")
-  qrCode                String   @unique
-  paymentMethod         String?
-  paymentStatus         String   @default("unpaid")
-  slipImageUrl          String?
-  slipRejectReason      String?
-  bookingDate           DateTime
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id               Int      @id @default(autoincrement())
+  zoneId           Int
+  tableId          Int?
+  guestCount       Int
+  extraTable       Boolean  @default(false)
+  totalAmount      Float
+  depositAmount    Float
+  customerName     String
+  customerPhone    String
+  lineId           String?
+  arrivalTime      String?
+  occasion         String?
+  note             String?
+  status           String   @default("pending")
+  qrCode           String   @unique
+  paymentMethod    String?
+  paymentStatus    String   @default("unpaid")
+  slipImageUrl     String?
+  slipRejectReason String?
+  bookingDate      DateTime
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  table            Table?   @relation(fields: [tableId], references: [id])
+  zone             Zone     @relation(fields: [zoneId], references: [id])
 }
 
 model AppConfig {
-  id                    Int     @id @default(1)
-  isBookingOpen         Boolean @default(true)
-  openTime              String  @default("18:00")
-  closeTime             String  @default("02:00")
-  isBookingFeeRequired  Boolean @default(true)
-  bankName              String?
-  bankAccountNumber     String?
-  bankAccountName       String?
-  promptPayNumber       String?
+  id                   Int     @id @default(autoincrement())
+  isBookingOpen        Boolean @default(true)
+  openTime             String  @default("18:00")
+  closeTime            String  @default("02:00")
+  isBookingFeeRequired Boolean @default(true)
+  bankName             String?
+  bankAccountNumber    String?
+  bankAccountName      String?
+  promptPayNumber      String?
 }
 
 model Fixture {
@@ -94,14 +93,14 @@ model Fixture {
 }
 
 model SpecialDate {
-  id               Int      @id @default(autoincrement())
-  date             DateTime @unique
-  name             String
-  description      String?
-  priceType        String   @default("normal")
-  depositRequired  Boolean  @default(true)
-  depositAmount    Float?
-  isActive         Boolean  @default(true)
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
+  id              Int      @id @default(autoincrement())
+  date            DateTime @unique
+  name            String
+  description     String?
+  priceType       String   @default("normal")
+  depositRequired Boolean  @default(true)
+  depositAmount   Float?
+  isActive        Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 }

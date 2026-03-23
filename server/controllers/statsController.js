@@ -1,6 +1,5 @@
-import { PrismaClient } from '@prisma/client'
+import { prisma } from '../index.js'
 
-const prisma = new PrismaClient()
 
 export const getTodayStats = async (req, res) => {
     const today = new Date()
