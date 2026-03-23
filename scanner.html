@@ -3,7 +3,10 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Scan QR Code - จองโต๊ะ</title>
+  <title>Scan QR Code - Mongkol Bar</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Prompt:wght@300;400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/src/styles/main.css">
   <script src="https://unpkg.com/lucide@latest"></script>
   <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
@@ -11,135 +14,398 @@
     body {
       margin: 0;
       padding: 0;
-      background: var(--bg-dark);
       min-height: 100vh;
       display: flex;
       flex-direction: column;
+      background: #080808;
+      overflow-x: hidden;
     }
 
-    .scanner-container {
+    /* Ambient background glow */
+    body::before {
+      content: '';
+      position: fixed;
+      top: -200px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 600px;
+      height: 600px;
+      background: radial-gradient(circle, rgba(212,32,32,0.12) 0%, transparent 70%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .scanner-page {
       flex: 1;
       display: flex;
       flex-direction: column;
-      max-width: 800px;
+      align-items: center;
+      padding: 32px 20px 48px;
+      position: relative;
+      z-index: 1;
+      max-width: 520px;
       margin: 0 auto;
-      padding: var(--spacing-lg);
       width: 100%;
       box-sizing: border-box;
     }
 
-    .header {
+    /* ── Header ── */
+    .scanner-header {
       text-align: center;
-      margin-bottom: var(--spacing-xl);
+      margin-bottom: 36px;
+      width: 100%;
     }
 
-    #reader {
-      border: 2px solid var(--glass-border);
-      border-radius: var(--radius-lg);
+    .logo-wrap {
+      display: inline-flex;
+      background: white;
+      border-radius: 14px;
+      padding: 10px 22px;
+      box-shadow: 0 4px 32px rgba(212,32,32,0.35);
+      margin-bottom: 24px;
+    }
+
+    .scanner-header h1 {
+      font-size: 1.9rem;
+      font-weight: 700;
+      margin: 0 0 6px;
+      color: #fff;
+      letter-spacing: -0.01em;
+    }
+
+    .scanner-header .sub {
+      font-size: 0.85rem;
+      color: rgba(255,255,255,0.35);
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      font-weight: 500;
+    }
+
+    /* ── Scanner Box ── */
+    .scanner-wrap {
+      width: 100%;
+      position: relative;
+    }
+
+    /* Overlay corners on top of the reader */
+    .viewfinder-overlay {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      z-index: 20;
+      border-radius: 20px;
       overflow: hidden;
-      background: var(--bg-surface);
-      max-width: 600px;
-      margin: 0 auto;
     }
 
-    .info-box {
-      margin-top: var(--spacing-xl);
-      padding: var(--spacing-lg);
-      background: rgba(6, 182, 212, 0.1);
-      border: 1px solid var(--accent-neon);
-      border-radius: var(--radius-md);
-      text-align: center;
+    /* Corner brackets */
+    .corner {
+      position: absolute;
+      width: 36px;
+      height: 36px;
     }
+    .corner::before,
+    .corner::after {
+      content: '';
+      position: absolute;
+      background: var(--primary, #D42020);
+      border-radius: 3px;
+    }
+    .corner::before { width: 100%; height: 4px; top: 0; left: 0; }
+    .corner::after  { width: 4px; height: 100%; top: 0; left: 0; }
+
+    .corner.tl { top: 20px; left: 20px; }
+    .corner.tr { top: 20px; right: 20px; transform: scaleX(-1); }
+    .corner.bl { bottom: 20px; left: 20px; transform: scaleY(-1); }
+    .corner.br { bottom: 20px; right: 20px; transform: scale(-1); }
+
+    /* Scanning line */
+    .scan-line {
+      position: absolute;
+      left: 16px;
+      right: 16px;
+      height: 2px;
+      background: linear-gradient(90deg, transparent 0%, var(--primary, #D42020) 20%, #ff6b6b 50%, var(--primary, #D42020) 80%, transparent 100%);
+      border-radius: 2px;
+      box-shadow: 0 0 12px 2px rgba(212,32,32,0.6);
+      animation: scanline 2.4s ease-in-out infinite;
+      top: 20px;
+      z-index: 21;
+    }
+
+    @keyframes scanline {
+      0%   { top: 20px; opacity: 0; }
+      5%   { opacity: 1; }
+      95%  { opacity: 1; }
+      100% { top: calc(100% - 20px); opacity: 0; }
+    }
+
+    /* html5-qrcode overrides */
+    #reader {
+      border: none !important;
+      background: #111 !important;
+      border-radius: 20px !important;
+      overflow: hidden !important;
+      box-shadow: 0 0 0 1px rgba(212,32,32,0.3), 0 8px 40px rgba(0,0,0,0.6) !important;
+      width: 100% !important;
+    }
+
+    #reader video {
+      border-radius: 16px;
+    }
+
+    #reader img[alt="Info icon"] { display: none !important; }
+
+    /* Library default buttons and text */
+    #reader__scan_region { background: #111 !important; border-radius: 16px 16px 0 0 !important; }
+    #reader__dashboard { background: #111 !important; border-top: 1px solid rgba(255,255,255,0.05) !important; padding: 16px !important; border-radius: 0 0 16px 16px !important; }
+    #reader__dashboard_section_swaplink { display: none !important; }
+
+    #reader__status_span {
+      display: none !important;
+    }
+
+    #reader__dashboard_section_csr button,
+    #reader__dashboard_section_csr span {
+      background: var(--primary, #D42020) !important;
+      color: white !important;
+      border: none !important;
+      border-radius: 12px !important;
+      padding: 12px 24px !important;
+      font-size: 0.95rem !important;
+      font-weight: 600 !important;
+      cursor: pointer !important;
+      font-family: inherit !important;
+      letter-spacing: 0.02em !important;
+    }
+
+    #reader__filescan_input {
+      display: none !important;
+    }
+
+    #reader__dashboard_section_fsr {
+      margin-top: 10px !important;
+    }
+
+    #reader__dashboard_section_fsr button,
+    #reader__dashboard_section_fsr span {
+      background: rgba(255,255,255,0.06) !important;
+      color: rgba(255,255,255,0.6) !important;
+      border: 1px solid rgba(255,255,255,0.1) !important;
+      border-radius: 12px !important;
+      padding: 10px 20px !important;
+      font-size: 0.85rem !important;
+      font-weight: 500 !important;
+      cursor: pointer !important;
+      font-family: inherit !important;
+    }
+
+    #reader__camera_permission_button {
+      background: var(--primary, #D42020) !important;
+      color: white !important;
+      border: none !important;
+      border-radius: 14px !important;
+      padding: 14px 28px !important;
+      font-size: 1rem !important;
+      font-weight: 700 !important;
+      cursor: pointer !important;
+      font-family: inherit !important;
+      letter-spacing: 0.02em !important;
+      box-shadow: 0 4px 20px rgba(212,32,32,0.4) !important;
+      transition: all 0.2s !important;
+      margin: 16px auto !important;
+      display: block !important;
+    }
+
+    #reader__header_message {
+      color: rgba(255,255,255,0.5) !important;
+      font-size: 0.8rem !important;
+      font-family: inherit !important;
+    }
+
+    /* Camera select */
+    #reader__camera_selection {
+      background: rgba(255,255,255,0.05) !important;
+      border: 1px solid rgba(255,255,255,0.1) !important;
+      color: white !important;
+      border-radius: 10px !important;
+      padding: 8px 12px !important;
+      font-family: inherit !important;
+      font-size: 0.85rem !important;
+      margin-bottom: 10px !important;
+    }
+
+    /* Stop button */
+    #reader__dashboard_section_csr > div > button:last-child {
+      background: rgba(255,255,255,0.06) !important;
+      color: rgba(255,255,255,0.5) !important;
+      border: 1px solid rgba(255,255,255,0.08) !important;
+      margin-top: 8px !important;
+    }
+
+    /* ── Tip card ── */
+    .tip-card {
+      width: 100%;
+      margin-top: 20px;
+      padding: 16px 20px;
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.07);
+      border-radius: 16px;
+      display: flex;
+      align-items: flex-start;
+      gap: 14px;
+      box-sizing: border-box;
+    }
+
+    .tip-icon {
+      width: 36px;
+      height: 36px;
+      background: rgba(212,32,32,0.15);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+
+    .tip-card p {
+      margin: 0;
+      font-size: 0.82rem;
+      color: rgba(255,255,255,0.45);
+      line-height: 1.6;
+    }
+
+    .tip-card strong {
+      display: block;
+      font-size: 0.88rem;
+      color: rgba(255,255,255,0.75);
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+
+    /* ── Back link ── */
+    .back-btn {
+      margin-top: 28px;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      color: rgba(255,255,255,0.35);
+      font-size: 0.85rem;
+      font-weight: 500;
+      text-decoration: none;
+      padding: 10px 18px;
+      border-radius: 10px;
+      border: 1px solid rgba(255,255,255,0.08);
+      transition: all 0.2s ease;
+    }
+    .back-btn:hover {
+      color: rgba(255,255,255,0.7);
+      border-color: rgba(255,255,255,0.18);
+      background: rgba(255,255,255,0.04);
+    }
+
+    /* ── Result card ── */
+    .result-box { display: none; width: 100%; margin-top: 24px; }
+    .result-box.show { display: block; }
 
     .loader {
-      border: 4px solid rgba(255, 255, 255, 0.1);
-      border-top: 4px solid var(--primary);
+      border: 3px solid rgba(255,255,255,0.08);
+      border-top: 3px solid var(--primary, #D42020);
       border-radius: 50%;
-      width: 40px;
-      height: 40px;
-      animation: spin 1s linear infinite;
-      margin: var(--spacing-xl) auto;
+      width: 44px;
+      height: 44px;
+      animation: spin 0.9s linear infinite;
+      margin: 32px auto;
     }
 
-    @keyframes spin {
-      0% { transform: rotate(0deg); }
-      100% { transform: rotate(360deg); }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(24px); }
+      to   { opacity: 1; transform: translateY(0); }
     }
 
-    .result-box {
-      margin-top: var(--spacing-xl);
-      display: none;
+    .detail-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 13px 16px;
+      border-radius: 12px;
+      background: rgba(255,255,255,0.03);
     }
 
-    .result-box.show {
-      display: block;
-    }
+    .detail-row .label { color: rgba(255,255,255,0.4); font-size: 0.85rem; }
+    .detail-row .value { font-weight: 700; font-size: 0.95rem; }
   </style>
 </head>
 <body>
-  <div class="scanner-container animate-fade">
-    <div class="header">
-      <div style="display: flex; align-items: center; justify-content: center; gap: 12px; margin-bottom: var(--spacing-md);">
-        <div style="width: 56px; height: 56px; background: linear-gradient(135deg, var(--accent-gold), var(--primary)); border-radius: 14px; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 25px var(--accent-gold-glow);">
-          <i data-lucide="scan" style="width: 28px; height: 28px; color: white;"></i>
-        </div>
+  <div class="scanner-page animate-fade">
+
+    <!-- Header -->
+    <div class="scanner-header">
+      <div class="logo-wrap">
+        <img src="/src/assets/logo-black.png" alt="Mongkol Bar" style="height: 42px; object-fit: contain; display: block;">
       </div>
-      <h1 class="font-heading" style="font-size: 2.2rem; margin-bottom: var(--spacing-sm); background: linear-gradient(135deg, var(--accent-gold), var(--primary-light)); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;">
-        QR Code Scanner
-      </h1>
-      <p style="color: var(--text-dim); font-size: 1rem; font-weight: 500;">
-        แสกน QR Code เพื่อตรวจสอบการจอง
-      </p>
-      <p style="color: var(--text-dimmer); font-size: 0.85rem; margin-top: var(--spacing-xs);">
-        JONGTAO Bar & Lounge
-      </p>
+      <h1>ตรวจสอบการจอง</h1>
+      <p class="sub">Staff QR Scanner</p>
     </div>
 
-    <div id="reader"></div>
-
-    <div class="info-box" style="background: rgba(212, 165, 116, 0.08); border-color: var(--accent-gold);">
-      <p style="color: var(--accent-gold); font-weight: 600; margin-bottom: var(--spacing-sm); display: flex; align-items: center; gap: 8px;">
-        <i data-lucide="lightbulb" style="width: 18px; height: 18px;"></i> คำแนะนำ
-      </p>
-      <p style="color: var(--text-dim); font-size: 0.9rem;">
-        วาง QR Code ให้อยู่ในกรอบสี่เหลี่ยม • ระบบจะแสกนอัตโนมัติ
-      </p>
+    <!-- Scanner -->
+    <div class="scanner-wrap">
+      <div id="reader"></div>
+      <div class="viewfinder-overlay">
+        <div class="corner tl"></div>
+        <div class="corner tr"></div>
+        <div class="corner bl"></div>
+        <div class="corner br"></div>
+        <div class="scan-line" id="scan-line"></div>
+      </div>
     </div>
 
+    <!-- Tip -->
+    <div class="tip-card">
+      <div class="tip-icon">
+        <i data-lucide="scan-line" style="width: 18px; height: 18px; color: #D42020;"></i>
+      </div>
+      <div>
+        <strong>วิธีใช้งาน</strong>
+        <p>จ่อ QR Code ของลูกค้าให้อยู่ในกรอบ ระบบจะสแกนและแสดงข้อมูลการจองโดยอัตโนมัติ</p>
+      </div>
+    </div>
+
+    <!-- Result -->
     <div id="result-box" class="result-box"></div>
 
-    <div style="text-align: center; margin-top: var(--spacing-xl);">
-      <a href="/" class="btn btn-ghost" style="display: inline-flex; align-items: center; gap: 8px;">
-        <i data-lucide="arrow-left" style="width: 16px; height: 16px;"></i> กลับหน้าแรก
-      </a>
-    </div>
+    <a href="/" class="back-btn">
+      <i data-lucide="arrow-left" style="width: 15px; height: 15px;"></i> กลับหน้าหลัก
+    </a>
   </div>
 
   <script>
-    // Initialize Lucide icons
-    if (typeof lucide !== 'undefined') {
-      lucide.createIcons();
-    }
+    if (typeof lucide !== 'undefined') lucide.createIcons();
   </script>
+
   <script type="module">
     import client from './src/api/client.js';
 
     let html5QrcodeScanner;
 
-    function onScanSuccess(decodedText, decodedResult) {
-      console.log(`QR Code detected: ${decodedText}`);
+    // Hide scan line when no camera active
+    function setScanLineVisible(visible) {
+      const line = document.getElementById('scan-line');
+      if (line) line.style.display = visible ? 'block' : 'none';
+    }
+    setScanLineVisible(false);
 
-      // Stop scanning
-      if (html5QrcodeScanner) {
-        html5QrcodeScanner.clear();
-      }
+    function onScanSuccess(decodedText) {
+      if (html5QrcodeScanner) html5QrcodeScanner.clear();
+      setScanLineVisible(false);
 
-      // Show loader
       const resultBox = document.getElementById('result-box');
       resultBox.innerHTML = '<div class="loader"></div>';
       resultBox.classList.add('show');
+      resultBox.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 
-      // Fetch booking data
       fetchBookingByQR(decodedText);
     }
 
@@ -148,171 +414,132 @@
         const booking = await client.get(`/bookings/qr/${qrCode}`);
         displayBookingDetails(booking);
       } catch (error) {
-        console.error('Error fetching booking:', error);
         displayError('ไม่พบข้อมูลการจอง หรือ QR Code ไม่ถูกต้อง');
       }
     }
 
     function displayBookingDetails(booking) {
-      const resultBox = document.getElementById('result-box');
-
-      const statusColors = {
-        pending: { bg: 'rgba(255, 193, 7, 0.1)', color: '#FFC107', text: 'รอยืนยัน' },
-        confirmed: { bg: 'rgba(76, 175, 80, 0.1)', color: '#4CAF50', text: 'ยืนยันแล้ว' },
-        cancelled: { bg: 'rgba(244, 67, 54, 0.1)', color: '#F44336', text: 'ยกเลิกแล้ว' },
-        completed: { bg: 'rgba(33, 150, 243, 0.1)', color: '#2196F3', text: 'เสร็จสิ้น' }
+      const statusMap = {
+        pending:   { bg: 'rgba(251,191,36,0.12)',  color: '#FBBF24', text: 'รอยืนยัน' },
+        confirmed: { bg: 'rgba(34,197,94,0.12)',   color: '#22C55E', text: 'ยืนยันแล้ว' },
+        cancelled: { bg: 'rgba(239,68,68,0.12)',   color: '#EF4444', text: 'ยกเลิก' },
+        completed: { bg: 'rgba(59,130,246,0.12)',  color: '#3B82F6', text: 'เสร็จสิ้น' }
+      };
+      const payMap = {
+        unpaid:               { color: '#F97316', text: 'ยังไม่ชำระ' },
+        pending_verification: { color: '#FBBF24', text: 'รอตรวจสลิป' },
+        paid:                 { color: '#22C55E', text: 'ชำระแล้ว' },
+        slip_rejected:        { color: '#EF4444', text: 'ปฏิเสธสลิป' },
+        free:                 { color: '#22C55E', text: 'จองฟรี' }
       };
 
-      const paymentStatusColors = {
-        unpaid: { bg: 'rgba(255, 87, 34, 0.1)', color: '#FF5722', text: 'ยังไม่ชำระ' },
-        paid: { bg: 'rgba(76, 175, 80, 0.1)', color: '#4CAF50', text: 'ชำระแล้ว' },
-        refunded: { bg: 'rgba(158, 158, 158, 0.1)', color: '#9E9E9E', text: 'คืนเงินแล้ว' }
-      };
-
-      const status = statusColors[booking.status] || statusColors.pending;
-      const paymentStatus = paymentStatusColors[booking.paymentStatus] || paymentStatusColors.unpaid;
+      const s = statusMap[booking.status] || statusMap.pending;
+      const p = payMap[booking.paymentStatus] || payMap.unpaid;
       const bookingDate = new Date(booking.bookingDate).toLocaleDateString('th-TH', {
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric',
-        weekday: 'long'
+        year: 'numeric', month: 'long', day: 'numeric', weekday: 'long'
       });
 
-      resultBox.innerHTML = `
-        <div class="glass-card" style="padding: var(--spacing-xl); animation: slideUp 0.5s ease;">
-          <div style="text-align: center; margin-bottom: var(--spacing-xl);">
-            <div style="width: 64px; height: 64px; background: linear-gradient(135deg, var(--success), #10B981); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto var(--spacing-md); box-shadow: 0 4px 25px rgba(16, 185, 129, 0.4);">
-              <i data-lucide="check-circle" style="width: 36px; height: 36px; color: white;"></i>
+      const isConfirmed = booking.status === 'confirmed';
+
+      document.getElementById('result-box').innerHTML = `
+        <div style="background: #111; border: 1px solid rgba(255,255,255,0.08); border-radius: 20px; overflow: hidden; animation: slideUp 0.4s ease;">
+
+          <!-- Status banner -->
+          <div style="padding: 24px 24px 20px; text-align: center; background: ${isConfirmed ? 'rgba(34,197,94,0.08)' : 'rgba(255,255,255,0.02)'}; border-bottom: 1px solid rgba(255,255,255,0.06);">
+            <div style="width: 60px; height: 60px; border-radius: 50%; background: ${isConfirmed ? 'rgba(34,197,94,0.15)' : 'rgba(255,255,255,0.06)'}; display: flex; align-items: center; justify-content: center; margin: 0 auto 14px; border: 2px solid ${isConfirmed ? '#22C55E' : 'rgba(255,255,255,0.1)'};">
+              <i data-lucide="${isConfirmed ? 'check-circle-2' : 'user'}" style="width: 28px; height: 28px; color: ${isConfirmed ? '#22C55E' : 'rgba(255,255,255,0.5)'};"></i>
             </div>
-            <h2 class="font-heading" style="font-size: 1.75rem; margin-bottom: var(--spacing-xs);">
-              พบข้อมูลการจองแล้ว!
-            </h2>
-            <div style="display: flex; gap: 8px; justify-content: center; margin-top: var(--spacing-sm); flex-wrap: wrap;">
-              <div style="padding: 8px 20px; background: ${status.bg}; color: ${status.color}; border-radius: var(--radius-full); font-weight: 700;">
-                ${status.text}
-              </div>
-              <div style="padding: 8px 20px; background: ${paymentStatus.bg}; color: ${paymentStatus.color}; border-radius: var(--radius-full); font-weight: 700; display: flex; align-items: center; gap: 6px;">
-                <i data-lucide="credit-card" style="width: 14px; height: 14px;"></i> ${paymentStatus.text}
-              </div>
+            <div style="font-weight: 800; font-size: 1.25rem; color: white; margin-bottom: 10px;">${booking.customerName}</div>
+            <div style="display: flex; gap: 8px; justify-content: center; flex-wrap: wrap;">
+              <span style="padding: 5px 14px; border-radius: 100px; font-size: 0.78rem; font-weight: 700; background: ${s.bg}; color: ${s.color};">${s.text}</span>
+              <span style="padding: 5px 14px; border-radius: 100px; font-size: 0.78rem; font-weight: 700; background: rgba(255,255,255,0.06); color: ${p.color};">${p.text}</span>
             </div>
           </div>
 
-          <div style="display: grid; gap: var(--spacing-md); margin-bottom: var(--spacing-xl);">
-            <div style="display: flex; justify-content: space-between; padding: var(--spacing-md); background: rgba(255,255,255,0.02); border-radius: var(--radius-md);">
-              <span style="color: var(--text-dim);">หมายเลขจอง</span>
-              <span style="font-weight: 700; font-family: 'Outfit';">#${booking.id.toString().padStart(4, '0')}</span>
+          <!-- Details -->
+          <div style="padding: 16px 20px; display: grid; gap: 6px;">
+            <div class="detail-row">
+              <span class="label">หมายเลขจอง</span>
+              <span class="value" style="font-family: monospace; color: var(--primary, #D42020);">#${String(booking.id).padStart(4,'0')}</span>
             </div>
-
-            <div style="display: flex; justify-content: space-between; padding: var(--spacing-md); background: rgba(255,255,255,0.02); border-radius: var(--radius-md);">
-              <span style="color: var(--text-dim);">ชื่อผู้จอง</span>
-              <span style="font-weight: 700;">${booking.customerName}</span>
+            <div class="detail-row">
+              <span class="label">เบอร์โทร</span>
+              <span class="value">${booking.customerPhone}</span>
             </div>
-
-            <div style="display: flex; justify-content: space-between; padding: var(--spacing-md); background: rgba(255,255,255,0.02); border-radius: var(--radius-md);">
-              <span style="color: var(--text-dim);">เบอร์โทรศัพท์</span>
-              <span style="font-weight: 700; font-family: 'Outfit';">${booking.customerPhone}</span>
+            <div class="detail-row">
+              <span class="label">วันที่</span>
+              <span class="value" style="text-align: right; max-width: 60%;">${bookingDate}</span>
             </div>
-
-            <div style="display: flex; justify-content: space-between; padding: var(--spacing-md); background: rgba(255,255,255,0.02); border-radius: var(--radius-md);">
-              <span style="color: var(--text-dim);">วันที่จอง</span>
-              <span style="font-weight: 700;">${bookingDate}</span>
+            <div class="detail-row">
+              <span class="label">โซน</span>
+              <span class="value" style="color: ${booking.zone.color};">${booking.zone.name}</span>
             </div>
-
-            <div style="display: flex; justify-content: space-between; padding: var(--spacing-md); background: rgba(255,255,255,0.02); border-radius: var(--radius-md);">
-              <span style="color: var(--text-dim);">โซน</span>
-              <span style="font-weight: 700; color: ${booking.zone.color};">${booking.zone.name}</span>
-            </div>
-
             ${booking.table ? `
-            <div style="display: flex; justify-content: space-between; padding: var(--spacing-md); background: rgba(255,255,255,0.02); border-radius: var(--radius-md);">
-              <span style="color: var(--text-dim);">โต๊ะ</span>
-              <span style="font-weight: 700;">${booking.table.number}</span>
+            <div class="detail-row">
+              <span class="label">โต๊ะ</span>
+              <span class="value">โต๊ะ ${booking.table.number}</span>
+            </div>` : ''}
+            <div class="detail-row">
+              <span class="label">จำนวนคน</span>
+              <span class="value">${booking.guestCount} คน</span>
             </div>
-            ` : ''}
-
-            <div style="display: flex; justify-content: space-between; padding: var(--spacing-md); background: rgba(255,255,255,0.02); border-radius: var(--radius-md);">
-              <span style="color: var(--text-dim);">จำนวนคน</span>
-              <span style="font-weight: 700; font-family: 'Outfit';">${booking.guestCount} คน</span>
-            </div>
-
             ${booking.extraTable ? `
-            <div style="display: flex; justify-content: space-between; padding: var(--spacing-md); background: rgba(6, 182, 212, 0.1); border: 1px solid var(--accent-neon); border-radius: var(--radius-md);">
-              <span style="color: var(--accent-neon);">โต๊ะเสริม</span>
-              <span style="font-weight: 700; color: var(--accent-neon); display: flex; align-items: center; gap: 4px;">
-                <i data-lucide="check" style="width: 16px; height: 16px;"></i> มี
-              </span>
-            </div>
-            ` : ''}
-
-            <div style="display: flex; justify-content: space-between; padding: var(--spacing-lg); background: rgba(124, 58, 237, 0.15); border: 2px solid var(--primary); border-radius: var(--radius-md); margin-top: var(--spacing-sm);">
-              <span style="color: white; font-weight: 700; font-size: 1.1rem;">ยอดชำระ</span>
-              <span style="font-weight: 800; font-size: 1.5rem; font-family: 'Outfit'; color: var(--accent-neon);">฿${booking.depositAmount.toLocaleString()}</span>
+            <div class="detail-row" style="background: rgba(212,32,32,0.08); border: 1px solid rgba(212,32,32,0.2);">
+              <span class="label" style="color: rgba(255,255,255,0.6);">โต๊ะเสริม</span>
+              <span class="value" style="color: #D42020;">มี</span>
+            </div>` : ''}
+            <div class="detail-row" style="background: rgba(212,32,32,0.1); border: 1px solid rgba(212,32,32,0.25); margin-top: 4px;">
+              <span class="label" style="color: rgba(255,255,255,0.7); font-weight: 600;">ยอดชำระ</span>
+              <span class="value" style="font-size: 1.3rem; color: white;">฿${booking.depositAmount.toLocaleString()}</span>
             </div>
           </div>
 
-          <button onclick="location.reload()" class="btn btn-primary" style="width: 100%; height: 56px; font-size: 1.1rem; font-weight: 700; display: flex; align-items: center; justify-content: center; gap: 8px;">
-            <i data-lucide="scan" style="width: 20px; height: 20px;"></i> แสกน QR ใหม่
-          </button>
+          <!-- Action -->
+          <div style="padding: 16px 20px 20px;">
+            <button onclick="location.reload()" style="width: 100%; height: 50px; background: var(--primary, #D42020); color: white; border: none; border-radius: 14px; font-size: 0.95rem; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; font-family: inherit; letter-spacing: 0.02em; box-shadow: 0 4px 20px rgba(212,32,32,0.35); transition: all 0.2s;">
+              <i data-lucide="scan" style="width: 18px; height: 18px;"></i> สแกน QR ใหม่
+            </button>
+          </div>
         </div>
-
-        <style>
-          @keyframes slideUp {
-            from {
-              opacity: 0;
-              transform: translateY(30px);
-            }
-            to {
-              opacity: 1;
-              transform: translateY(0);
-            }
-          }
-        </style>
       `;
-      // Reinitialize Lucide icons after injecting HTML
-      if (typeof lucide !== 'undefined') {
-        lucide.createIcons();
-      }
+      if (typeof lucide !== 'undefined') lucide.createIcons();
     }
 
     function displayError(message) {
-      const resultBox = document.getElementById('result-box');
-      resultBox.innerHTML = `
-        <div class="glass-card" style="padding: var(--spacing-xl); text-align: center; border-color: var(--danger); animation: slideUp 0.5s ease;">
-          <div style="width: 64px; height: 64px; background: linear-gradient(135deg, var(--danger), #EF4444); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto var(--spacing-md); box-shadow: 0 4px 25px rgba(239, 68, 68, 0.4);">
-            <i data-lucide="x-circle" style="width: 36px; height: 36px; color: white;"></i>
+      document.getElementById('result-box').innerHTML = `
+        <div style="background: #111; border: 1px solid rgba(239,68,68,0.25); border-radius: 20px; padding: 32px 24px; text-align: center; animation: slideUp 0.4s ease;">
+          <div style="width: 60px; height: 60px; border-radius: 50%; background: rgba(239,68,68,0.1); border: 2px solid rgba(239,68,68,0.3); display: flex; align-items: center; justify-content: center; margin: 0 auto 16px;">
+            <i data-lucide="x-circle" style="width: 28px; height: 28px; color: #EF4444;"></i>
           </div>
-          <h3 class="font-heading" style="font-size: 1.5rem; color: var(--danger); margin-bottom: var(--spacing-md);">
-            ไม่พบข้อมูล
-          </h3>
-          <p style="color: var(--text-dim); margin-bottom: var(--spacing-xl);">
-            ${message}
-          </p>
-          <button onclick="location.reload()" class="btn btn-outline" style="padding: 12px 24px; font-weight: 700; display: inline-flex; align-items: center; gap: 8px;">
-            <i data-lucide="rotate-ccw" style="width: 18px; height: 18px;"></i> ลองอีกครั้ง
+          <div style="font-weight: 700; font-size: 1.1rem; color: #EF4444; margin-bottom: 8px;">ไม่พบข้อมูล</div>
+          <p style="color: rgba(255,255,255,0.4); font-size: 0.85rem; margin: 0 0 24px;">${message}</p>
+          <button onclick="location.reload()" style="background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); color: rgba(255,255,255,0.7); border-radius: 12px; padding: 11px 24px; font-size: 0.9rem; font-weight: 600; cursor: pointer; font-family: inherit; display: inline-flex; align-items: center; gap: 8px;">
+            <i data-lucide="rotate-ccw" style="width: 15px; height: 15px;"></i> ลองอีกครั้ง
           </button>
         </div>
       `;
-      // Reinitialize Lucide icons
-      if (typeof lucide !== 'undefined') {
-        lucide.createIcons();
-      }
-    }
-
-    function onScanFailure(error) {
-      // Ignore scan failures (happens frequently during scanning)
+      if (typeof lucide !== 'undefined') lucide.createIcons();
     }
 
     // Initialize scanner
     html5QrcodeScanner = new Html5QrcodeScanner(
       "reader",
-      {
-        fps: 10,
-        qrbox: { width: 250, height: 250 },
-        aspectRatio: 1.0
-      },
+      { fps: 10, qrbox: { width: 240, height: 240 }, aspectRatio: 1.0 },
       false
     );
-    html5QrcodeScanner.render(onScanSuccess, onScanFailure);
+    html5QrcodeScanner.render(
+      (text) => onScanSuccess(text),
+      () => {}
+    );
+
+    // Show scan line once camera starts (poll for video element)
+    const scanLineTimer = setInterval(() => {
+      const video = document.querySelector('#reader video');
+      if (video) {
+        setScanLineVisible(true);
+        clearInterval(scanLineTimer);
+      }
+    }, 500);
   </script>
 </body>
 </html>

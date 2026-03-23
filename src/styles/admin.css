@@ -1,5 +1,8 @@
 .admin-body {
-    background: radial-gradient(ellipse at top left, rgba(212, 32, 32, 0.10) 0%, var(--bg-dark) 60%);
+    background:
+        radial-gradient(ellipse at top left, rgba(212, 32, 32, 0.22) 0%, transparent 55%),
+        radial-gradient(ellipse at bottom right, rgba(140, 10, 10, 0.15) 0%, transparent 50%),
+        #080808;
     background-attachment: fixed;
 }
 
@@ -12,8 +15,8 @@
 /* Sidebar */
 .sidebar {
     width: 280px;
-    background: var(--bg-surface);
-    border-right: 1px solid var(--glass-border);
+    background: linear-gradient(180deg, rgba(30, 6, 6, 0.98) 0%, rgba(15, 3, 3, 0.98) 100%);
+    border-right: 1px solid rgba(212, 32, 32, 0.25);
     display: flex;
     flex-direction: column;
     padding: var(--spacing-lg);
@@ -21,7 +24,7 @@
     height: 100vh;
     z-index: 100;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    box-shadow: 4px 0 20px rgba(0, 0, 0, 0.2);
+    box-shadow: 4px 0 30px rgba(0, 0, 0, 0.5), inset -1px 0 0 rgba(212, 32, 32, 0.1);
 }
 
 .sidebar-brand {
@@ -48,11 +51,11 @@
 .nav-item {
     background: transparent;
     border: none;
-    color: var(--text-dim);
+    color: rgba(255, 255, 255, 0.45);
     padding: 14px 18px;
     border-radius: var(--radius-md);
     text-align: left;
-    font-size: 1rem;
+    font-size: 0.95rem;
     font-weight: 500;
     cursor: pointer;
     transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
@@ -63,22 +66,23 @@
 }
 
 .nav-item:hover {
-    background: var(--glass-bg);
-    color: var(--text-main);
+    background: rgba(212, 32, 32, 0.1);
+    color: rgba(255, 255, 255, 0.85);
     transform: translateX(4px);
 }
 
 .nav-item.active {
-    background: rgba(212, 32, 32, 0.12);
-    color: var(--accent-neon);
+    background: rgba(212, 32, 32, 0.18);
+    color: #fff;
     border-left: 3px solid var(--primary);
     border-radius: 0 var(--radius-md) var(--radius-md) 0;
-    font-weight: 600;
+    font-weight: 700;
+    box-shadow: inset 0 0 20px rgba(212, 32, 32, 0.08);
 }
 
 .sidebar-footer {
     margin-top: auto;
-    border-top: 1px solid var(--glass-border);
+    border-top: 1px solid rgba(212, 32, 32, 0.2);
     padding-top: var(--spacing-md);
 }
 
@@ -95,7 +99,7 @@
     align-items: center;
     margin-bottom: var(--spacing-xl);
     padding-bottom: var(--spacing-md);
-    border-bottom: 2px solid var(--glass-border);
+    border-bottom: 1px solid rgba(212, 32, 32, 0.3);
 }
 
 .admin-header h2 {
@@ -115,9 +119,9 @@
 .stat-card {
     padding: var(--spacing-lg);
     border-radius: var(--radius-lg);
-    background: var(--bg-surface);
-    border: 1px solid var(--glass-border);
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+    background: linear-gradient(135deg, rgba(25, 5, 5, 0.9) 0%, rgba(15, 3, 3, 0.95) 100%);
+    border: 1px solid rgba(212, 32, 32, 0.2);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(212, 32, 32, 0.08);
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     position: relative;
     overflow: hidden;
@@ -157,16 +161,16 @@
     font-size: 2.25rem;
     font-weight: 800;
     font-family: 'Outfit', sans-serif;
-    color: var(--accent-neon);
+    color: #fff;
 }
 
 /* Tables */
 .admin-table-container {
-    background: var(--bg-surface);
+    background: rgba(12, 3, 3, 0.9);
     border-radius: var(--radius-lg);
-    border: 1px solid var(--glass-border);
+    border: 1px solid rgba(212, 32, 32, 0.2);
     overflow: hidden;
-    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.3);
+    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.5);
 }
 
 .admin-table {
@@ -177,23 +181,24 @@
 .admin-table th {
     text-align: left;
     padding: 20px;
-    background: rgba(255, 255, 255, 0.03);
-    color: var(--text-dim);
-    font-size: 0.85rem;
+    background: rgba(212, 32, 32, 0.1);
+    color: rgba(255, 255, 255, 0.55);
+    font-size: 0.8rem;
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.1em;
+    border-bottom: 1px solid rgba(212, 32, 32, 0.25);
 }
 
 .admin-table td {
     padding: 18px 20px;
-    border-top: 1px solid var(--glass-border);
+    border-top: 1px solid rgba(255, 255, 255, 0.04);
     font-size: 0.95rem;
     color: var(--text-muted);
 }
 
-.admin-table tr:hover {
-    background: rgba(255, 255, 255, 0.02);
+.admin-table tr:hover td {
+    background: rgba(212, 32, 32, 0.05);
 }
 
 .status-badge {
@@ -582,7 +587,7 @@
     top: 0;
     bottom: 0;
     width: 2px;
-    background: linear-gradient(to bottom, var(--accent-neon), rgba(255, 255, 255, 0.05));
+    background: linear-gradient(to bottom, rgba(212, 32, 32, 0.8), rgba(212, 32, 32, 0.05));
     border-radius: 2px;
 }
 
