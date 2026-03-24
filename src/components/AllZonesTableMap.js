@@ -104,21 +104,19 @@ export default class AllZonesTableMap {
             <i data-lucide="lock" style="width: 16px; height: 16px; color: var(--text-muted); margin-left: auto; flex-shrink: 0;"></i>
           </div>
           ` : `
-          <label for="booking-date" style="display: block; margin-bottom: var(--spacing-sm); font-weight: 600; color: var(--text-muted); font-size: 0.9rem; display: flex; align-items: center; gap: 8px;">
-            <i data-lucide="calendar" style="width: 16px; height: 16px;"></i> เลือกวันที่จอง
+          <label for="booking-date" style="display: flex; align-items: center; gap: 8px; margin-bottom: 10px; font-weight: 600; color: var(--text-muted); font-size: 0.85rem;">
+            <i data-lucide="calendar" style="width: 15px; height: 15px;"></i> เลือกวันที่จอง
           </label>
-          <div style="display: flex; gap: var(--spacing-md); align-items: center; flex-wrap: wrap;">
-            <input
-              type="date"
-              id="booking-date"
-              value="${this.selectedDate}"
-              min="${minDate}"
-              max="${maxDateStr}"
-              style="flex: 1; min-width: 200px; padding: 14px; background: var(--bg-surface); border: 2px solid var(--glass-border); border-radius: var(--radius-md); color: white; font-size: 1rem; font-family: inherit; cursor: pointer; transition: all 0.2s ease;"
-            />
-            <div style="flex: 1; min-width: 200px; color: var(--accent-neon); font-weight: 600; font-size: 0.95rem;">
-              ${this.formatThaiDate(this.selectedDate)}
-            </div>
+          <input
+            type="date"
+            id="booking-date"
+            value="${this.selectedDate}"
+            min="${minDate}"
+            max="${maxDateStr}"
+            style="width: 100%; box-sizing: border-box; padding: 13px 16px; background: var(--bg-surface); border: 2px solid var(--glass-border); border-radius: var(--radius-md); color: white; font-size: 1rem; font-family: inherit; cursor: pointer; transition: border-color 0.2s ease; -webkit-appearance: none; appearance: none;"
+          />
+          <div style="margin-top: 8px; color: var(--primary); font-weight: 600; font-size: 0.9rem; padding: 0 2px;">
+            ${this.formatThaiDate(this.selectedDate)}
           </div>
           `}
           ${this.specialDate ? `

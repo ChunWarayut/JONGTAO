@@ -11,27 +11,31 @@
     href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Prompt:wght@300;400;500;600&display=swap"
     rel="stylesheet">
   <link rel="stylesheet" href="/src/styles/main.css">
+  <style>
+    @media (max-width: 420px) {
+      .nav-label { display: none; }
+    }
+  </style>
   <script src="https://unpkg.com/lucide@latest"></script>
 </head>
 
 <body>
   <div id="app">
     <header class="container" style="border-bottom: 1px solid rgba(212, 32, 32, 0.2);">
-      <nav style="display: flex; justify-content: space-between; align-items: center; padding: 28px 0;">
-        <div id="logo-home"
-          style="cursor: pointer; padding: 8px 16px; background: white; border-radius: 10px; display: inline-flex; align-items: center; box-shadow: 0 2px 20px rgba(212,32,32,0.3);">
-          <img src="/src/assets/logo-black.png" alt="Mongkol Bar"
-            style="height: 44px; object-fit: contain; display: block;">
+      <nav style="display: flex; justify-content: space-between; align-items: center; padding: 16px 0;">
+        <div id="logo-home" style="cursor: pointer; display: inline-flex; align-items: center; flex-shrink: 0;">
+          <img src="/src/assets/logo-white.png" alt="Mongkol Bar"
+            style="height: 40px; object-fit: contain; display: block;">
         </div>
-        <div id="nav-actions" style="display: flex; gap: 12px; align-items: center;">
+        <div id="nav-actions" style="display: flex; gap: 8px; align-items: center;">
           <button id="btn-clear-booking" class="btn btn-outline"
-            style="display: none; padding: 6px 12px; font-size: 0.8rem; border-color: var(--danger); color: var(--danger);">เริ่มใหม่</button>
+            style="display: none; padding: 6px 10px; font-size: 0.75rem; border-color: var(--danger); color: var(--danger);">เริ่มใหม่</button>
           <a href="/scanner.html" class="btn btn-primary"
-            style="padding: 10px 20px; font-size: 0.85rem; font-weight: 700; display: flex; align-items: center; gap: 8px;">
-            <i data-lucide="qr-code" style="width: 18px; height: 18px;"></i> Scan QR
+            style="padding: 8px 14px; font-size: 0.8rem; font-weight: 700; display: flex; align-items: center; gap: 6px;">
+            <i data-lucide="qr-code" style="width: 16px; height: 16px;"></i><span class="nav-label"> Scan QR</span>
           </a>
           <a href="/admin.html" class="btn btn-ghost"
-            style="padding: 10px 20px; font-size: 0.85rem; font-weight: 700;">ผู้จัดการ</a>
+            style="padding: 8px 14px; font-size: 0.8rem; font-weight: 700;">ผู้จัดการ</a>
         </div>
       </nav>
     </header>
