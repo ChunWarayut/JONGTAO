@@ -39,21 +39,21 @@ export default class Settings {
               </label>
             </div>
 
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--spacing-lg);">
-              <div class="form-group">
-                <label>เวลาเปิดรับจอง</label>
-                <input type="time" id="openTime" value="${config.openTime}" class="form-control-pro" style="margin-top: 8px;">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+              <div>
+                <label style="display: block; font-size: 0.82rem; font-weight: 600; color: rgba(255,255,255,0.5); margin-bottom: 6px;">เวลาเปิดรับจอง</label>
+                <input type="text" id="openTime" value="${config.openTime}" placeholder="18:00" class="form-control-pro" style="text-align: center; font-size: 1.1rem; font-weight: 700; letter-spacing: 0.05em;">
               </div>
-              <div class="form-group">
-                <label>เวลาปิดรับจอง</label>
-                <input type="time" id="closeTime" value="${config.closeTime}" class="form-control-pro" style="margin-top: 8px;">
+              <div>
+                <label style="display: block; font-size: 0.82rem; font-weight: 600; color: rgba(255,255,255,0.5); margin-bottom: 6px;">เวลาปิดรับจอง</label>
+                <input type="text" id="closeTime" value="${config.closeTime}" placeholder="02:00" class="form-control-pro" style="text-align: center; font-size: 1.1rem; font-weight: 700; letter-spacing: 0.05em;">
               </div>
             </div>
 
             <!-- Bank Account Info -->
-            <div style="padding: var(--spacing-md); background: rgba(255,255,255,0.02); border-radius: var(--radius-md); border: 1px solid var(--glass-border);">
-              <h3 style="font-weight: 700; font-size: 1rem; margin-bottom: var(--spacing-sm);">ข้อมูลบัญชีธนาคาร / ช่องทางรับชำระเงิน</h3>
-              <p style="font-size: 0.8rem; color: var(--text-dim); margin-bottom: var(--spacing-md);">ข้อมูลนี้จะแสดงให้ลูกค้าเห็นในขั้นตอนชำระเงิน</p>
+            <div style="padding: 16px; background: rgba(255,255,255,0.02); border-radius: 12px; border: 1px solid rgba(212,32,32,0.15);">
+              <h3 style="font-weight: 700; font-size: 0.9rem; margin-bottom: 4px; color: white;">ข้อมูลบัญชีธนาคาร</h3>
+              <p style="font-size: 0.78rem; color: rgba(255,255,255,0.35); margin-bottom: 14px;">แสดงให้ลูกค้าในขั้นตอนชำระเงิน</p>
               <div style="display: grid; gap: var(--spacing-md);">
                 <div class="form-group">
                   <label style="font-size: 0.9rem; color: var(--text-dim);">ชื่อธนาคาร</label>
@@ -113,14 +113,25 @@ export default class Settings {
           input:focus + .slider { box-shadow: 0 0 1px var(--primary); }
           input:checked + .slider:before { transform: translateX(26px); background-color: white; }
           .form-control-pro {
-            background: rgba(255, 255, 255, 0.03);
-            border: 1px solid var(--glass-border);
-            border-radius: var(--radius-md);
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
             padding: 12px 16px;
             color: white;
             width: 100%;
             box-sizing: border-box;
+            font-family: inherit;
+            font-size: 0.95rem;
+            -webkit-appearance: none;
+            appearance: none;
+            transition: border-color 0.2s;
           }
+          .form-control-pro:focus {
+            outline: none;
+            border-color: rgba(212, 32, 32, 0.6);
+            box-shadow: 0 0 0 3px rgba(212, 32, 32, 0.12);
+          }
+          .form-control-pro::placeholder { color: rgba(255,255,255,0.2); }
         </style>
       `;
 

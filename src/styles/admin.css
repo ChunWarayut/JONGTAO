@@ -573,6 +573,66 @@
     }
 }
 
+/* ── Global Form Inputs (Admin) ── */
+.admin-content input[type="text"],
+.admin-content input[type="date"],
+.admin-content input[type="time"],
+.admin-content input[type="number"],
+.admin-content input[type="password"],
+.admin-content input[type="email"],
+.admin-content textarea,
+.admin-content select {
+    width: 100%;
+    box-sizing: border-box;
+    background: #1c0a0a !important;
+    border: 1px solid rgba(212, 32, 32, 0.25) !important;
+    border-radius: 10px;
+    padding: 11px 14px;
+    color: #fff !important;
+    font-size: 0.95rem;
+    font-family: inherit;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    -webkit-appearance: none;
+    appearance: none;
+    color-scheme: dark;
+}
+
+.admin-content input[type="text"]:focus,
+.admin-content input[type="date"]:focus,
+.admin-content input[type="time"]:focus,
+.admin-content input[type="number"]:focus,
+.admin-content input[type="password"]:focus,
+.admin-content input[type="email"]:focus,
+.admin-content textarea:focus,
+.admin-content select:focus {
+    outline: none;
+    border-color: rgba(212, 32, 32, 0.6);
+    box-shadow: 0 0 0 3px rgba(212, 32, 32, 0.12);
+}
+
+.admin-content input::placeholder,
+.admin-content textarea::placeholder {
+    color: rgba(255, 255, 255, 0.2);
+}
+
+.admin-content select option {
+    background: #1a0505;
+    color: #fff;
+}
+
+.admin-content .form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.admin-content .form-group label {
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.5);
+    letter-spacing: 0.02em;
+}
+
 /* Premium Timeline Feed */
 .timeline {
     position: relative;

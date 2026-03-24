@@ -28,20 +28,22 @@ export default class MapDesigner {
 
         container.innerHTML = `
             <div class="map-designer animate-fade">
-                <div class="designer-toolbar glass-card" style="margin-bottom: var(--spacing-lg); display: flex; gap: var(--spacing-md); align-items: center; padding: var(--spacing-md) var(--spacing-lg); flex-wrap: wrap;">
-                    <div class="input-wrapper" style="display: flex; align-items: center; gap: var(--spacing-sm); flex-grow: 1;">
-                        <select id="designer-zone-select" class="form-control" style="width: auto; height: 44px; min-width: 240px;">
+                <div class="designer-toolbar glass-card" style="margin-bottom: var(--spacing-lg); padding: 14px 16px; display: flex; flex-direction: column; gap: 10px;">
+                    <!-- Row 1: Zone select + Add table -->
+                    <div style="display: flex; gap: 8px; align-items: center;">
+                        <select id="designer-zone-select" class="form-control" style="flex: 1; height: 42px; min-width: 0; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: white; border-radius: 10px; padding: 0 12px; font-family: inherit; font-size: 0.9rem;">
                             <option value="">-- เลือกโซนเพื่อเพิ่มโต๊ะ --</option>
                             ${this.zones.map(z => `<option value="${z.id}">${z.name}</option>`).join('')}
                         </select>
-                        <button id="btn-add-table" class="btn btn-primary" style="height: 44px;">
-                             เพิ่มโต๊ะ
+                        <button id="btn-add-table" class="btn btn-primary" style="height: 42px; padding: 0 16px; white-space: nowrap; flex-shrink: 0;">
+                            เพิ่มโต๊ะ
                         </button>
-                        <button id="btn-add-fixture" class="btn btn-ghost" style="height: 44px; border: 1px solid var(--accent-neon); color: var(--accent-neon);">
-                             + เพิ่มสิ่งอำนวยความสะดวก
+                        <button id="btn-add-fixture" class="btn btn-ghost" style="height: 42px; padding: 0 14px; white-space: nowrap; flex-shrink: 0; font-size: 0.82rem; border-color: rgba(255,255,255,0.2); color: rgba(255,255,255,0.7);">
+                            + อุปกรณ์
                         </button>
                     </div>
-                    <button id="btn-save-map" class="btn btn-success" style="background: var(--success); height: 44px; box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);">
+                    <!-- Row 2: Save button -->
+                    <button id="btn-save-map" class="btn btn-success" style="background: var(--success); height: 42px; width: 100%; font-size: 0.95rem; font-weight: 700; box-shadow: 0 4px 15px rgba(16, 185, 129, 0.25);">
                         บันทึกผังร้าน
                     </button>
                 </div>

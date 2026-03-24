@@ -20,62 +20,56 @@ export default class SpecialDatesManager {
         </div>
 
         <!-- Add/Edit Form -->
-        <div class="glass-card" style="margin-bottom: var(--spacing-xl); padding: var(--spacing-lg);">
-          <h3 class="font-heading" style="font-size: 1.25rem; margin-bottom: var(--spacing-lg);" id="form-title">
-            ➕ เพิ่มวันพิเศษใหม่
+        <div style="background: rgba(12,3,3,0.8); border: 1px solid rgba(212,32,32,0.2); border-radius: 16px; margin-bottom: var(--spacing-xl); padding: 20px;">
+          <h3 class="font-heading" style="font-size: 1rem; font-weight: 700; margin-bottom: 18px; display: flex; align-items: center; gap: 8px; color: white;" id="form-title">
+            <span style="width: 28px; height: 28px; background: rgba(212,32,32,0.2); border-radius: 8px; display:inline-flex; align-items:center; justify-content:center; font-size:0.9rem;">➕</span>
+            เพิ่มวันพิเศษใหม่
           </h3>
 
           <form id="special-date-form">
-            <div class="form-grid" style="display: grid; gap: var(--spacing-md);">
-              <!-- Date -->
-              <div class="form-group">
-                <label for="date-input">📆 วันที่</label>
-                <input type="date" id="date-input" required style="width: 100%;">
+            <div style="display: grid; gap: 14px;">
+
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
+                <div class="form-group">
+                  <label for="date-input">วันที่</label>
+                  <input type="date" id="date-input" required>
+                </div>
+                <div class="form-group">
+                  <label for="price-type-select">ประเภทราคา</label>
+                  <select id="price-type-select" required>
+                    <option value="free">ฟรี</option>
+                    <option value="normal">ปกติ - ตามโซน</option>
+                    <option value="full">เต็มจำนวน</option>
+                    <option value="custom">กำหนดเอง</option>
+                  </select>
+                </div>
               </div>
 
-              <!-- Name -->
               <div class="form-group">
-                <label for="name-input">🎉 ชื่ออีเวนท์</label>
-                <input type="text" id="name-input" placeholder="เช่น คอนเสิร์ต XXX, วันหยุดพิเศษ" required>
+                <label for="name-input">ชื่ออีเวนท์</label>
+                <input type="text" id="name-input" placeholder="เช่น คอนเสิร์ต Mirrr, วันหยุดพิเศษ" required>
               </div>
 
-              <!-- Description -->
               <div class="form-group">
-                <label for="description-input">📝 รายละเอียด (ไม่บังคับ)</label>
-                <textarea id="description-input" rows="3" placeholder="รายละเอียดเพิ่มเติม..."></textarea>
+                <label for="description-input">รายละเอียด (ไม่บังคับ)</label>
+                <textarea id="description-input" rows="2" placeholder="รายละเอียดเพิ่มเติม..." style="resize: none;"></textarea>
               </div>
 
-              <!-- Price Type -->
-              <div class="form-group">
-                <label for="price-type-select">💰 ประเภทราคา</label>
-                <select id="price-type-select" required>
-                  <option value="free">ฟรี - ไม่ต้องจ่ายเงิน</option>
-                  <option value="normal">ปกติ - ตามราคาโซน</option>
-                  <option value="full">เต็มจำนวน - จ่ายเต็มตามโซน</option>
-                  <option value="custom">กำหนดเอง - ระบุจำนวนเงิน</option>
-                </select>
-              </div>
-
-              <!-- Custom Deposit Amount (shown only for custom type) -->
               <div class="form-group" id="custom-deposit-group" style="display: none;">
-                <label for="deposit-amount-input">💵 จำนวนเงินมัดจำ (บาท)</label>
-                <input type="number" id="deposit-amount-input" min="0" step="0.01" placeholder="0.00">
+                <label for="deposit-amount-input">จำนวนเงินมัดจำ (บาท)</label>
+                <input type="number" id="deposit-amount-input" min="0" step="1" placeholder="เช่น 500">
               </div>
 
-              <!-- Deposit Required -->
-              <div class="form-group">
-                <label style="display: flex; align-items: center; gap: var(--spacing-sm); cursor: pointer;">
-                  <input type="checkbox" id="deposit-required-checkbox" checked>
-                  <span>✅ จำเป็นต้องจ่ายเงินมัดจำ</span>
-                </label>
-              </div>
+              <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; font-size: 0.88rem; color: rgba(255,255,255,0.6);">
+                <input type="checkbox" id="deposit-required-checkbox" checked style="width: auto; accent-color: var(--primary);">
+                จำเป็นต้องจ่ายเงินมัดจำ
+              </label>
 
-              <!-- Buttons -->
-              <div style="display: flex; gap: var(--spacing-md); margin-top: var(--spacing-md);">
-                <button type="submit" class="btn btn-primary" style="flex: 1;">
+              <div style="display: flex; gap: 10px; padding-top: 4px;">
+                <button type="submit" class="btn btn-primary" style="flex: 1; height: 44px; font-size: 0.95rem;">
                   <span id="btn-submit-text">เพิ่มวันพิเศษ</span>
                 </button>
-                <button type="button" id="btn-cancel" class="btn btn-ghost" style="display: none;">
+                <button type="button" id="btn-cancel" class="btn btn-ghost" style="display: none; height: 44px; padding: 0 18px; font-size: 0.9rem;">
                   ยกเลิก
                 </button>
               </div>
@@ -84,9 +78,9 @@ export default class SpecialDatesManager {
         </div>
 
         <!-- Special Dates List -->
-        <div class="glass-card" style="padding: var(--spacing-lg);">
-          <h3 class="font-heading" style="font-size: 1.25rem; margin-bottom: var(--spacing-lg);">
-            📋 วันพิเศษทั้งหมด
+        <div style="background: rgba(12,3,3,0.8); border: 1px solid rgba(212,32,32,0.2); border-radius: 16px; padding: 20px;">
+          <h3 class="font-heading" style="font-size: 1rem; font-weight: 700; margin-bottom: 16px; color: white;">
+            วันพิเศษทั้งหมด
           </h3>
 
           <div id="special-dates-list">
@@ -126,53 +120,22 @@ export default class SpecialDatesManager {
       };
 
       return `
-        <div class="special-date-item" data-id="${sd.id}" style="padding: var(--spacing-lg); background: rgba(255,255,255,0.02); border: 1px solid var(--glass-border); border-radius: var(--radius-md); margin-bottom: var(--spacing-md);">
-          <div style="display: flex; justify-content: space-between; align-items: start; flex-wrap: wrap; gap: var(--spacing-md);">
-            <div style="flex: 1; min-width: 200px;">
-              <h4 class="font-heading" style="color: var(--accent-neon); font-size: 1.1rem; margin-bottom: var(--spacing-xs);">
-                ${sd.name}
-              </h4>
-              <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: var(--spacing-sm);">
-                📅 ${formattedDate}
-              </p>
-              ${sd.description ? `<p style="color: var(--text-dim); font-size: 0.85rem; margin-bottom: var(--spacing-sm);">${sd.description}</p>` : ''}
-
-              <div style="display: flex; flex-wrap: wrap; gap: var(--spacing-sm); margin-top: var(--spacing-sm);">
-                <span class="badge" style="background: rgba(124, 58, 237, 0.2); color: var(--primary); padding: 4px 12px; border-radius: 12px; font-size: 0.75rem; font-weight: 600;">
-                  ${priceTypeLabels[sd.priceType]}
-                </span>
-                ${sd.priceType === 'custom' && sd.depositAmount ? `
-                  <span class="badge" style="background: rgba(0, 255, 255, 0.1); color: var(--accent-neon); padding: 4px 12px; border-radius: 12px; font-size: 0.75rem; font-weight: 600;">
-                    ฿${sd.depositAmount.toLocaleString()}
-                  </span>
-                ` : ''}
-                ${sd.depositRequired ? `
-                  <span class="badge" style="background: rgba(16, 185, 129, 0.2); color: var(--success); padding: 4px 12px; border-radius: 12px; font-size: 0.75rem; font-weight: 600;">
-                    ✅ ต้องมัดจำ
-                  </span>
-                ` : `
-                  <span class="badge" style="background: rgba(239, 68, 68, 0.2); color: var(--danger); padding: 4px 12px; border-radius: 12px; font-size: 0.75rem; font-weight: 600;">
-                    ❌ ไม่ต้องมัดจำ
-                  </span>
-                `}
-                ${!sd.isActive ? `
-                  <span class="badge" style="background: rgba(100, 116, 139, 0.2); color: var(--text-dim); padding: 4px 12px; border-radius: 12px; font-size: 0.75rem; font-weight: 600;">
-                    🚫 ปิดใช้งาน
-                  </span>
-                ` : ''}
+        <div class="special-date-item" data-id="${sd.id}" style="padding: 16px; background: rgba(255,255,255,0.02); border: 1px solid rgba(212,32,32,0.15); border-radius: 12px; margin-bottom: 10px; ${!sd.isActive ? 'opacity: 0.5;' : ''}">
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 12px;">
+            <div style="flex: 1; min-width: 0;">
+              <div style="font-weight: 700; font-size: 0.95rem; color: white; margin-bottom: 3px;">${sd.name}</div>
+              <div style="font-size: 0.78rem; color: rgba(255,255,255,0.4); margin-bottom: 8px;">${formattedDate}</div>
+              ${sd.description ? `<div style="font-size: 0.8rem; color: rgba(255,255,255,0.35); margin-bottom: 8px;">${sd.description}</div>` : ''}
+              <div style="display: flex; flex-wrap: wrap; gap: 6px;">
+                <span style="background: rgba(212,32,32,0.15); color: #ff7070; padding: 3px 10px; border-radius: 8px; font-size: 0.72rem; font-weight: 600;">${priceTypeLabels[sd.priceType]}</span>
+                ${sd.priceType === 'custom' && sd.depositAmount ? `<span style="background: rgba(255,255,255,0.08); color: white; padding: 3px 10px; border-radius: 8px; font-size: 0.72rem; font-weight: 600;">฿${sd.depositAmount.toLocaleString()}</span>` : ''}
+                ${sd.depositRequired ? `<span style="background: rgba(16,185,129,0.12); color: #34d399; padding: 3px 10px; border-radius: 8px; font-size: 0.72rem; font-weight: 600;">ต้องมัดจำ</span>` : `<span style="background: rgba(239,68,68,0.1); color: #f87171; padding: 3px 10px; border-radius: 8px; font-size: 0.72rem; font-weight: 600;">ไม่ต้องมัดจำ</span>`}
               </div>
             </div>
-
-            <div style="display: flex; gap: var(--spacing-sm); flex-wrap: wrap;">
-              <button class="btn-edit btn btn-ghost" data-id="${sd.id}" style="padding: 8px 16px; font-size: 0.85rem;">
-                ✏️ แก้ไข
-              </button>
-              <button class="btn-toggle btn btn-ghost" data-id="${sd.id}" style="padding: 8px 16px; font-size: 0.85rem;">
-                ${sd.isActive ? '🔒 ปิด' : '🔓 เปิด'}
-              </button>
-              <button class="btn-delete btn btn-ghost" data-id="${sd.id}" style="padding: 8px 16px; font-size: 0.85rem; color: var(--danger); border-color: var(--danger);">
-                🗑️ ลบ
-              </button>
+            <div style="display: flex; flex-direction: column; gap: 6px; flex-shrink: 0;">
+              <button class="btn-edit" data-id="${sd.id}" style="padding: 6px 12px; font-size: 0.78rem; border-radius: 8px; border: 1px solid rgba(255,255,255,0.12); background: rgba(255,255,255,0.05); color: white; cursor: pointer; font-family: inherit;">แก้ไข</button>
+              <button class="btn-toggle" data-id="${sd.id}" style="padding: 6px 12px; font-size: 0.78rem; border-radius: 8px; border: 1px solid rgba(255,255,255,0.08); background: rgba(255,255,255,0.03); color: rgba(255,255,255,0.5); cursor: pointer; font-family: inherit;">${sd.isActive ? 'ปิด' : 'เปิด'}</button>
+              <button class="btn-delete" data-id="${sd.id}" style="padding: 6px 12px; font-size: 0.78rem; border-radius: 8px; border: 1px solid rgba(212,32,32,0.3); background: rgba(212,32,32,0.08); color: #f87171; cursor: pointer; font-family: inherit;">ลบ</button>
             </div>
           </div>
         </div>

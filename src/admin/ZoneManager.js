@@ -7,45 +7,62 @@ export default class ZoneManager {
       const zones = await client.get('/zones');
 
       container.innerHTML = `
-        <div class="glass-card" style="margin-bottom: var(--spacing-lg); display: flex; justify-content: space-between; align-items: center;">
-          <p style="color: var(--text-muted);">ตั้งค่าผังร้าน ราคาขั้นต่ำ และความจุของโต๊ะ</p>
-          <button id="btn-add-zone" class="btn btn-primary" style="padding: 8px 16px; font-size: 0.8rem;">+ เพิ่มโซนใหม่</button>
+        <div style="margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 14px 16px; background: rgba(12,3,3,0.8); border: 1px solid rgba(212,32,32,0.2); border-radius: 14px;">
+          <p style="color: rgba(255,255,255,0.45); font-size: 0.85rem; margin: 0;">ตั้งค่าผังร้าน ราคาขั้นต่ำ และความจุของโต๊ะ</p>
+          <button id="btn-add-zone" class="btn btn-primary" style="padding: 10px 16px; font-size: 0.85rem; white-space: nowrap; flex-shrink: 0;">+ เพิ่มโซน</button>
         </div>
 
-        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: var(--spacing-lg);">
+        <div style="display: flex; flex-direction: column; gap: 14px;">
           ${zones.map(zone => `
-            <div class="glass-card animate-fade" style="border-top: 4px solid ${zone.color};">
-              <div style="display: flex; justify-content: space-between; margin-bottom: var(--spacing-md);">
-                <h3 style="color: ${zone.color};">${zone.code} - ${zone.name}</h3>
-                <span style="font-size: 0.75rem; background: var(--bg-surface); padding: 2px 8px; border-radius: 4px;">ID: ${zone.id}</span>
+            <div style="background: rgba(12,3,3,0.85); border: 1px solid rgba(212,32,32,0.2); border-top: 3px solid ${zone.color}; border-radius: 14px; padding: 16px;">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                <div>
+                  <span style="font-weight: 700; font-size: 1rem; color: white;">${zone.code}</span>
+                  <span style="font-size: 0.9rem; color: rgba(255,255,255,0.5); margin-left: 6px;">${zone.name}</span>
+                </div>
+                <span style="font-size: 0.72rem; background: rgba(255,255,255,0.06); color: rgba(255,255,255,0.35); padding: 3px 10px; border-radius: 6px;">ID: ${zone.id}</span>
               </div>
-              
-              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--spacing-md); margin-bottom: var(--spacing-lg);">
-                <div class="form-group" style="grid-column: 1 / -1;">
-                  <label style="font-size: 0.75rem;">สีของโซน (Zone Color)</label>
-                  <input type="color" value="${zone.color}" class="zone-input" data-id="${zone.id}" data-field="color" style="width: 100%; height: 40px; padding: 2px; border-radius: 4px; border: 1px solid var(--glass-border); background: transparent; cursor: pointer;">
+
+              <div style="display: grid; gap: 10px; margin-bottom: 14px;">
+                <!-- Color row -->
+                <div>
+                  <label style="display: block; font-size: 0.78rem; font-weight: 600; color: rgba(255,255,255,0.4); margin-bottom: 6px;">สีโซน</label>
+                  <div style="display: flex; align-items: center; gap: 10px;">
+                    <input type="color" value="${zone.color}" class="zone-input" data-id="${zone.id}" data-field="color"
+                      style="width: 44px; height: 36px; padding: 2px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.15); background: transparent; cursor: pointer; flex-shrink: 0;">
+                    <input type="text" value="${zone.color}" class="zone-color-hex zone-input-hex" data-id="${zone.id}"
+                      style="flex:1; background:#1c0a0a; border:1px solid rgba(212,32,32,0.25); border-radius:10px; padding:8px 12px; color:white; font-size:0.9rem; font-family:monospace; -webkit-appearance:none;">
+                  </div>
                 </div>
-                <div class="form-group">
-                  <label style="font-size: 0.75rem;">ยอดขั้นต่ำ (Min Spend)</label>
-                  <input type="number" value="${zone.minSpend}" class="zone-input" data-id="${zone.id}" data-field="minSpend">
-                </div>
-                <div class="form-group">
-                  <label style="font-size: 0.75rem;">จำนวนโต๊ะรวม</label>
-                  <input type="number" value="${zone.totalTables}" class="zone-input" data-id="${zone.id}" data-field="totalTables">
-                </div>
-                <div class="form-group">
-                  <label style="font-size: 0.75rem;">ค่าพื้นที่โต๊ะเสริม</label>
-                  <input type="number" value="${zone.extraTableCost}" class="zone-input" data-id="${zone.id}" data-field="extraTableCost">
-                </div>
-                <div class="form-group">
-                  <label style="font-size: 0.75rem;">ที่นั่ง/โต๊ะ</label>
-                  <input type="number" value="${zone.seatsPerTable}" class="zone-input" data-id="${zone.id}" data-field="seatsPerTable">
+
+                <!-- 2-col grid -->
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                  <div>
+                    <label style="display:block; font-size:0.78rem; font-weight:600; color:rgba(255,255,255,0.4); margin-bottom:5px;">ยอดขั้นต่ำ (฿)</label>
+                    <input type="number" value="${zone.minSpend}" class="zone-input" data-id="${zone.id}" data-field="minSpend"
+                      style="width:100%; background:#1c0a0a; border:1px solid rgba(212,32,32,0.25); border-radius:10px; padding:9px 12px; color:white; font-size:0.9rem; box-sizing:border-box; -webkit-appearance:none;">
+                  </div>
+                  <div>
+                    <label style="display:block; font-size:0.78rem; font-weight:600; color:rgba(255,255,255,0.4); margin-bottom:5px;">จำนวนโต๊ะ</label>
+                    <input type="number" value="${zone.totalTables}" class="zone-input" data-id="${zone.id}" data-field="totalTables"
+                      style="width:100%; background:#1c0a0a; border:1px solid rgba(212,32,32,0.25); border-radius:10px; padding:9px 12px; color:white; font-size:0.9rem; box-sizing:border-box; -webkit-appearance:none;">
+                  </div>
+                  <div>
+                    <label style="display:block; font-size:0.78rem; font-weight:600; color:rgba(255,255,255,0.4); margin-bottom:5px;">ค่าโต๊ะเสริม (฿)</label>
+                    <input type="number" value="${zone.extraTableCost}" class="zone-input" data-id="${zone.id}" data-field="extraTableCost"
+                      style="width:100%; background:#1c0a0a; border:1px solid rgba(212,32,32,0.25); border-radius:10px; padding:9px 12px; color:white; font-size:0.9rem; box-sizing:border-box; -webkit-appearance:none;">
+                  </div>
+                  <div>
+                    <label style="display:block; font-size:0.78rem; font-weight:600; color:rgba(255,255,255,0.4); margin-bottom:5px;">ที่นั่ง/โต๊ะ</label>
+                    <input type="number" value="${zone.seatsPerTable}" class="zone-input" data-id="${zone.id}" data-field="seatsPerTable"
+                      style="width:100%; background:#1c0a0a; border:1px solid rgba(212,32,32,0.25); border-radius:10px; padding:9px 12px; color:white; font-size:0.9rem; box-sizing:border-box; -webkit-appearance:none;">
+                  </div>
                 </div>
               </div>
 
-              <div style="display: flex; gap: var(--spacing-sm);">
-                <button class="btn btn-primary btn-save-zone" data-id="${zone.id}" style="flex: 1; padding: 8px; font-size: 0.8rem;">บันทึกข้อมูล</button>
-                <button class="btn btn-ghost btn-delete-zone" data-id="${zone.id}" style="padding: 8px; font-size: 0.8rem; border-color: var(--danger); color: var(--danger);">ลบโซน</button>
+              <div style="display: flex; gap: 8px;">
+                <button class="btn btn-primary btn-save-zone" data-id="${zone.id}" style="flex: 1; height: 42px; font-size: 0.9rem; font-weight: 700;">บันทึกข้อมูล</button>
+                <button class="btn-delete-zone" data-id="${zone.id}" style="height: 42px; padding: 0 16px; font-size: 0.85rem; border-radius: 10px; border: 1px solid rgba(212,32,32,0.4); background: rgba(212,32,32,0.08); color: #f87171; cursor: pointer; font-family: inherit; font-weight: 600;">ลบโซน</button>
               </div>
             </div>
           `).join('')}
@@ -59,15 +76,31 @@ export default class ZoneManager {
   }
 
   attachEvents(container) {
+    // Sync color picker ↔ hex input
+    container.querySelectorAll('.zone-input[data-field="color"]').forEach(picker => {
+      const id = picker.getAttribute('data-id');
+      const hexInput = container.querySelector(`.zone-color-hex[data-id="${id}"]`);
+      if (!hexInput) return;
+      picker.addEventListener('input', () => { hexInput.value = picker.value; });
+      hexInput.addEventListener('change', () => {
+        if (/^#[0-9a-fA-F]{6}$/.test(hexInput.value)) picker.value = hexInput.value;
+      });
+    });
+
     // Save
     container.querySelectorAll('.btn-save-zone').forEach(btn => {
       btn.addEventListener('click', async () => {
         const id = btn.getAttribute('data-id');
         const inputs = container.querySelectorAll(`.zone-input[data-id="${id}"]`);
+        const hexInput = container.querySelector(`.zone-color-hex[data-id="${id}"]`);
         const data = {};
         inputs.forEach(input => {
           const field = input.getAttribute('data-field');
-          data[field] = field === 'color' ? input.value : parseFloat(input.value);
+          if (field === 'color') {
+            data[field] = hexInput?.value || input.value;
+          } else {
+            data[field] = parseFloat(input.value);
+          }
         });
 
         try {
