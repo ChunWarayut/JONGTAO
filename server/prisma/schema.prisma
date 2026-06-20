@@ -92,6 +92,14 @@ model Fixture {
   rotation Int?
 }
 
+model PushSubscription {
+  id        Int      @id @default(autoincrement())
+  endpoint  String   @unique
+  p256dh    String
+  auth      String
+  createdAt DateTime @default(now())
+}
+
 model SpecialDate {
   id              Int      @id @default(autoincrement())
   date            DateTime @unique

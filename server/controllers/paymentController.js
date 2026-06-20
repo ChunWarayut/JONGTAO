@@ -1,5 +1,6 @@
 import { prisma } from '../index.js'
 import { notifyClients } from './bookingController.js'
+import { sendPushToAll } from '../services/pushService.js'
 
 export const uploadSlip = async (req, res) => {
     const { bookingId } = req.params
@@ -27,7 +28,19 @@ export const uploadSlip = async (req, res) => {
         })
 
         // Notify admin via SSE
-        notifyClients()
+        notifyClients('slip_uploaded', {
+            bookingId: parseInt(bookingId),
+            customerName: booking.customerName
+        })
+
+        // ส่ง Web Push ไปยัง admin (ทำงานแม้ปิดเบราว์เซอร์)
+        sendPushToAll({
+            title: 'สลิปโอนเงินเข้ามา!',
+            body: `${booking.customerName} ส่งสลิปมาแล้ว - รอตรวจสอบ`,
+            type: 'slip',
+            tag: `slip-${bookingId}`,
+            url: '/admin',
+        }).catch((err) => console.error('Push notification error:', err))
 
         res.json({ success: true, message: 'Slip uploaded successfully' })
     } catch (error) {
@@ -56,7 +69,7 @@ export const confirmPayment = async (req, res) => {
             }
         })
 
-        notifyClients()
+        notifyClients('payment_confirmed', { bookingId: parseInt(bookingId) })
 
         res.json({ success: true, message: 'Payment confirmed' })
     } catch (error) {
@@ -87,7 +100,7 @@ export const rejectPayment = async (req, res) => {
             }
         })
 
-        notifyClients()
+        notifyClients('payment_rejected', { bookingId: parseInt(bookingId) })
 
         res.json({ success: true, message: 'Slip rejected' })
     } catch (error) {

@@ -1,7 +1,6 @@
-import { PrismaClient } from '@prisma/client'
+import { prisma } from '../index.js'
 import crypto from 'crypto'
-
-const prisma = new PrismaClient()
+import { sendPushToAll } from '../services/pushService.js'
 
 // Store SSE clients
 let clients = []
@@ -10,18 +9,26 @@ export const streamBookings = (req, res) => {
     res.setHeader('Content-Type', 'text/event-stream')
     res.setHeader('Cache-Control', 'no-cache')
     res.setHeader('Connection', 'keep-alive')
+    res.setHeader('X-Accel-Buffering', 'no')
 
-    // Add this client
+    res.write('data: {"type":"connected"}\n\n')
+
+    const heartbeat = setInterval(() => {
+        res.write(': heartbeat\n\n')
+    }, 30000)
+
     clients.push(res)
 
     req.on('close', () => {
+        clearInterval(heartbeat)
         clients = clients.filter(c => c !== res)
     })
 }
 
-export const notifyClients = () => {
+export const notifyClients = (eventType = 'update', payload = {}) => {
+    const data = JSON.stringify({ type: eventType, ...payload })
     clients.forEach(client => {
-        client.write('data: update\n\n')
+        client.write(`data: ${data}\n\n`)
     })
 }
 
@@ -59,12 +66,31 @@ export const createBooking = async (req, res) => {
         })
 
         // Notify SSE clients
-        notifyClients()
+        notifyClients('new_booking', {
+            booking: {
+                id: booking.id,
+                customerName,
+                customerPhone,
+                guestCount: parseInt(guestCount),
+                zoneId: parseInt(zoneId),
+                arrivalTime,
+                bookingDate
+            }
+        })
+
+        // ส่ง Web Push ไปยัง admin ที่ subscribe ไว้ (ทำงานแม้ปิดเบราว์เซอร์)
+        sendPushToAll({
+            title: 'การจองใหม่เข้ามา!',
+            body: `${customerName} - ${parseInt(guestCount)} ท่าน`,
+            type: 'booking',
+            tag: `booking-${booking.id}`,
+            url: '/admin',
+        }).catch((err) => console.error('Push notification error:', err))
 
         res.status(201).json(booking)
     } catch (error) {
         console.error('Create booking error:', error)
-        res.status(400).json({ error: 'Could not create booking', details: error.message })
+        res.status(400).json({ error: 'Could not create booking' })
     }
 }
 
@@ -139,10 +165,11 @@ export const getPublicBookings = async (req, res) => {
 }
 
 export const getBookingById = async (req, res) => {
-    const { id } = req.params
+    const id = parseInt(req.params.id)
+    if (isNaN(id)) return res.status(400).json({ error: 'Invalid booking ID' })
     try {
         const booking = await prisma.booking.findUnique({
-            where: { id: parseInt(id) },
+            where: { id },
             include: { zone: true }
         })
         if (!booking) return res.status(404).json({ error: 'Booking not found' })
@@ -160,7 +187,7 @@ export const updateBookingStatus = async (req, res) => {
             where: { id: parseInt(id) },
             data: { status, paymentStatus }
         })
-        notifyClients()
+        notifyClients('status_update', { bookingId: parseInt(id), status, paymentStatus })
         res.json(booking)
     } catch (error) {
         res.status(400).json({ error: 'Could not update booking status' })
@@ -174,7 +201,7 @@ export const cancelBooking = async (req, res) => {
             where: { id: parseInt(id) },
             data: { status: 'cancelled' }
         })
-        notifyClients()
+        notifyClients('booking_cancelled', { bookingId: parseInt(id) })
         res.json(booking)
     } catch (error) {
         res.status(400).json({ error: 'Could not cancel booking' })

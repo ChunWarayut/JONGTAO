@@ -18,6 +18,7 @@ import configRoutes from './routes/config.js'
 import paymentRoutes from './routes/payment.js'
 import fixtureRoutes from './routes/fixtures.js'
 import specialDateRoutes from './routes/specialDates.js'
+import pushRoutes from './routes/push.js'
 
 dotenv.config()
 
@@ -25,6 +26,7 @@ const app = express()
 const prisma = new PrismaClient()
 const PORT = process.env.PORT || 3001 // Using 3001 as seen in .env
 
+app.disable('x-powered-by')
 app.use(cors())
 
 app.use('/api/payments', paymentRoutes)
@@ -45,6 +47,7 @@ app.use('/api/tables', tableRoutes)
 app.use('/api/config', configRoutes)
 app.use('/api/fixtures', fixtureRoutes)
 app.use('/api/special-dates', specialDateRoutes)
+app.use('/api/push', pushRoutes)
 
 // Error handling middleware
 app.use((err, req, res, next) => {
@@ -54,6 +57,11 @@ app.use((err, req, res, next) => {
 
 // Serve static frontend
 app.use(express.static(path.join(__dirname, '../dist'), { extensions: ['html'] }))
+
+// API 404 handler -- must be before SPA catch-all
+app.all('/api/*', (req, res) => {
+    res.status(404).json({ error: 'API endpoint not found' })
+})
 
 app.get('*', (req, res) => {
     res.sendFile(path.join(__dirname, '../dist/index.html'))

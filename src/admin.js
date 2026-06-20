@@ -1,5 +1,6 @@
 import client from './api/client.js';
 import { showAlert } from './utils/dialog.js';
+import notifications from './utils/notifications.js';
 import Dashboard from './admin/Dashboard.js';
 import BookingList from './admin/BookingList.js';
 import ZoneManager from './admin/ZoneManager.js';
@@ -50,6 +51,16 @@ class AdminApp {
         this.ownerName.innerText = user.name || user.username;
         this.renderView('dashboard');
         this.setupRealtimeFeed();
+
+        // Request browser notification permission after login (requires user gesture context)
+        notifications.requestBrowserPermission().then(permission => {
+            if (permission === 'denied') {
+                console.info('Browser notifications denied — OS-level alerts will not appear.')
+            }
+        });
+
+        // ลงทะเบียน Service Worker + Web Push สำหรับ notification แม้ปิดเบราว์เซอร์
+        notifications.registerPushSubscription();
     }
 
     setupRealtimeFeed() {
@@ -57,16 +68,70 @@ class AdminApp {
         this.sseSource = new EventSource('/api/bookings/stream');
 
         this.sseSource.onmessage = async (e) => {
-            if (e.data === 'update') {
-                // Soft refresh the current view if it is bookings or dashboard
-                if (this.currentViewId === 'dashboard' || this.currentViewId === 'bookings') {
-                    if (this.currentViewInstance && typeof this.currentViewInstance.render === 'function') {
-                        // Re-render without showing loader
-                        await this.currentViewInstance.render(this.viewContent, false);
-                    }
+            let event;
+            try {
+                event = JSON.parse(e.data);
+            } catch {
+                event = { type: 'generic_update' };
+            }
+
+            switch (event.type) {
+                case 'connected':
+                    this.updateConnectionStatus(true);
+                    return;
+
+                case 'new_booking':
+                    notifications.showAlert({
+                        title: 'การจองใหม่เข้ามา!',
+                        message: `${event.booking.customerName} - ${event.booking.guestCount} ท่าน`,
+                        type: 'booking',
+                    });
+                    notifications.showBrowserNotification({
+                        title: '🔔 การจองใหม่เข้ามา!',
+                        message: `${event.booking.customerName} - ${event.booking.guestCount} ท่าน`,
+                        type: 'booking',
+                        tag: `booking-${event.booking.id || Date.now()}`,
+                    });
+                    break;
+
+                case 'slip_uploaded':
+                    notifications.showAlert({
+                        title: 'สลิปโอนเงินเข้ามา!',
+                        message: `${event.customerName} ส่งสลิปมาแล้ว - รอตรวจสอบ`,
+                        type: 'slip',
+                    });
+                    notifications.showBrowserNotification({
+                        title: '🧾 สลิปโอนเงินเข้ามา!',
+                        message: `${event.customerName} ส่งสลิปมาแล้ว - รอตรวจสอบ`,
+                        type: 'slip',
+                        tag: `slip-${event.bookingId || Date.now()}`,
+                    });
+                    break;
+            }
+
+            // Soft refresh the current view if it is bookings or dashboard
+            if (this.currentViewId === 'dashboard' || this.currentViewId === 'bookings') {
+                if (this.currentViewInstance && typeof this.currentViewInstance.render === 'function') {
+                    await this.currentViewInstance.render(this.viewContent, false);
                 }
             }
         };
+
+        this.sseSource.onerror = () => {
+            this.updateConnectionStatus(false);
+        };
+
+        this.sseSource.onopen = () => {
+            this.updateConnectionStatus(true);
+        };
+    }
+
+    updateConnectionStatus(connected) {
+        const indicator = document.querySelector('#connection-status');
+        if (indicator) {
+            indicator.style.background = connected ? '#10b981' : '#f59e0b';
+            indicator.title = connected ? 'เชื่อมต่อ Real-time อยู่' : 'กำลังเชื่อมต่อใหม่...';
+        }
     }
 
     attachGlobalEvents() {
@@ -99,6 +164,22 @@ class AdminApp {
         document.querySelector('#btn-logout').addEventListener('click', () => {
             this.showLogin();
         });
+
+        // Sound toggle
+        const soundBtn = document.querySelector('#btn-toggle-sound');
+        if (soundBtn) {
+            soundBtn.addEventListener('click', () => {
+                const enabled = notifications.toggleSound();
+                soundBtn.innerHTML = `<i data-lucide="${enabled ? 'bell' : 'bell-off'}" style="width: 18px; height: 18px;"></i>`;
+                if (typeof lucide !== 'undefined') lucide.createIcons();
+                notifications.showToast({
+                    title: enabled ? 'เปิดเสียงแจ้งเตือน' : 'ปิดเสียงแจ้งเตือน',
+                    message: enabled ? 'จะมีเสียงเมื่อมีการจองใหม่' : 'ปิดเสียงแจ้งเตือนแล้ว',
+                    type: 'info',
+                    duration: 3000
+                });
+            });
+        }
 
         // Mobile menu toggle
         this.setupMobileMenu();

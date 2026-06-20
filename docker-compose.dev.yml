@@ -1,0 +1,28 @@
+version: '3.8'
+
+services:
+  web:
+    build: .
+    container_name: jongtao-dev-web
+    restart: always
+    env_file:
+      - .env
+    environment:
+      # Override the port so dev runs on 3002, keeping prod on 3001
+      - PORT=3002
+      # Point to the dev-specific DB file inside the named volume
+      - DATABASE_URL=file:/app/data/dev.db
+    volumes:
+      # Mount only the DB file, not the entire prisma dir (so migrations stay intact)
+      - jongtao-dev-db:/app/data
+    expose:
+      - "3002"
+
+volumes:
+  jongtao-dev-db:
+    name: jongtao-dev-db
+
+networks:
+  default:
+    name: kong_kong-net
+    external: true

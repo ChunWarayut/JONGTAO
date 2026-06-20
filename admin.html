@@ -87,7 +87,11 @@
             <main class="admin-content">
                 <header class="admin-header">
                     <h2 id="view-title">ภาพรวมแดชบอร์ด</h2>
-                    <div class="user-info">
+                    <div class="user-info" style="display: flex; align-items: center; gap: 12px;">
+                        <div id="connection-status" title="เชื่อมต่อ Real-time อยู่" style="width: 8px; height: 8px; border-radius: 50%; background: #10b981; flex-shrink: 0;"></div>
+                        <button id="btn-toggle-sound" title="เปิด/ปิดเสียงแจ้งเตือน" style="background: none; border: none; color: var(--text-dim); cursor: pointer; padding: 4px; display: flex; align-items: center;">
+                            <i data-lucide="bell" style="width: 18px; height: 18px;"></i>
+                        </button>
                         <span id="owner-name">Admin</span>
                     </div>
                 </header>
