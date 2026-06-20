@@ -55,6 +55,14 @@ app.use((err, req, res, next) => {
     res.status(500).json({ error: 'Something went wrong!' })
 })
 
+// Service Worker ต้องไม่ถูก cache เพื่อให้ browser เช็ค version ใหม่ทุกครั้ง
+app.get('/sw.js', (req, res) => {
+    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate')
+    res.setHeader('Service-Worker-Allowed', '/')
+    res.setHeader('Content-Type', 'application/javascript')
+    res.sendFile(path.join(__dirname, '../dist/sw.js'))
+})
+
 // Serve static frontend
 app.use(express.static(path.join(__dirname, '../dist'), { extensions: ['html'] }))
 
