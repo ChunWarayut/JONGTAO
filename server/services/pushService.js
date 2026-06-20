@@ -1,15 +1,27 @@
 import webpush from 'web-push'
-import { prisma } from '../index.js'
+import { prisma } from '../lib/prisma.js'
 
-// ตั้งค่า VAPID keys สำหรับ Web Push
-const vapidPublicKey = process.env.VAPID_PUBLIC_KEY
-const vapidPrivateKey = process.env.VAPID_PRIVATE_KEY
-const vapidSubject = process.env.VAPID_SUBJECT || 'mailto:admin@jongtao.app'
+// VAPID configuration is deferred to first use because ES module imports
+// execute before dotenv.config() in index.js, so process.env is not yet
+// populated at module-evaluation time.
+let vapidConfigured = false
 
-if (vapidPublicKey && vapidPrivateKey) {
-    webpush.setVapidDetails(vapidSubject, vapidPublicKey, vapidPrivateKey)
-} else {
-    console.warn('VAPID keys not configured - Web Push จะไม่ทำงาน')
+function ensureVapidConfigured() {
+    if (vapidConfigured) return true
+
+    const vapidPublicKey = process.env.VAPID_PUBLIC_KEY
+    const vapidPrivateKey = process.env.VAPID_PRIVATE_KEY
+    const vapidSubject = process.env.VAPID_SUBJECT || 'mailto:admin@jongtao.app'
+
+    if (vapidPublicKey && vapidPrivateKey) {
+        webpush.setVapidDetails(vapidSubject, vapidPublicKey, vapidPrivateKey)
+        vapidConfigured = true
+        console.log('Web Push VAPID configured successfully')
+        return true
+    } else {
+        console.warn('VAPID keys not configured - Web Push จะไม่ทำงาน')
+        return false
+    }
 }
 
 /**
@@ -19,7 +31,7 @@ if (vapidPublicKey && vapidPrivateKey) {
  * @param {Object} payload - { title, body, type, tag, url }
  */
 export async function sendPushToAll(payload) {
-    if (!vapidPublicKey || !vapidPrivateKey) {
+    if (!ensureVapidConfigured()) {
         return
     }
 
@@ -35,7 +47,10 @@ export async function sendPushToAll(payload) {
 
     const payloadString = JSON.stringify(payload)
 
-    const results = await Promise.allSettled(
+    let sentCount = 0
+    let failedCount = 0
+
+    await Promise.allSettled(
         subscriptions.map(async (sub) => {
             const pushSubscription = {
                 endpoint: sub.endpoint,
@@ -47,7 +62,9 @@ export async function sendPushToAll(payload) {
 
             try {
                 await webpush.sendNotification(pushSubscription, payloadString)
+                sentCount++
             } catch (error) {
+                failedCount++
                 // 404 หรือ 410 หมายความว่า subscription หมดอายุแล้ว ลบออก
                 if (error.statusCode === 404 || error.statusCode === 410) {
                     console.log(`ลบ expired subscription: ${sub.endpoint.slice(0, 60)}...`)
@@ -61,9 +78,5 @@ export async function sendPushToAll(payload) {
         })
     )
 
-    const sent = results.filter((r) => r.status === 'fulfilled').length
-    const failed = results.filter((r) => r.status === 'rejected').length
-    if (failed > 0) {
-        console.log(`Push notifications: ${sent} สำเร็จ, ${failed} ล้มเหลว`)
-    }
+    console.log(`Push notifications: ${sentCount} สำเร็จ, ${failedCount} ล้มเหลว จาก ${subscriptions.length} subscriptions`)
 }

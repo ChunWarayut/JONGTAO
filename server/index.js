@@ -1,7 +1,10 @@
+// env.js ต้อง import ก่อนทุกอย่าง — เป็น module แยกเพื่อให้
+// dotenv.config() ถูก evaluate ก่อน modules อื่นที่อ่าน process.env
+import './lib/env.js'
+
 import express from 'express'
 import cors from 'cors'
-import dotenv from 'dotenv'
-import { PrismaClient } from '@prisma/client'
+import { prisma } from './lib/prisma.js'
 import path from 'path'
 import { fileURLToPath } from 'url'
 
@@ -20,11 +23,8 @@ import fixtureRoutes from './routes/fixtures.js'
 import specialDateRoutes from './routes/specialDates.js'
 import pushRoutes from './routes/push.js'
 
-dotenv.config()
-
 const app = express()
-const prisma = new PrismaClient()
-const PORT = process.env.PORT || 3001 // Using 3001 as seen in .env
+const PORT = process.env.PORT || 3001
 
 app.disable('x-powered-by')
 app.use(cors())

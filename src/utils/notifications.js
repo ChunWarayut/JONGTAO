@@ -550,44 +550,62 @@ class NotificationManager {
             return
         }
 
+        // ต้องได้ notification permission ก่อน subscribe push
+        if (typeof Notification !== 'undefined' && Notification.permission !== 'granted') {
+            console.info('Push subscription ข้ามไป — notification permission ยังไม่ได้รับ:', Notification.permission)
+            return
+        }
+
         try {
             // ลงทะเบียน service worker
             this.swRegistration = await navigator.serviceWorker.register('/sw.js')
             console.log('Service Worker registered:', this.swRegistration.scope)
 
             // รอจน service worker พร้อมใช้งาน
-            await navigator.serviceWorker.ready
+            const registration = await navigator.serviceWorker.ready
+            console.log('Service Worker ready')
 
             // ตรวจสอบว่ามี subscription อยู่แล้วหรือไม่
-            let subscription = await this.swRegistration.pushManager.getSubscription()
+            let subscription = await registration.pushManager.getSubscription()
 
             if (!subscription) {
                 // ดึง VAPID public key จาก server
                 const response = await fetch('/api/push/vapid-public-key')
                 if (!response.ok) {
-                    console.warn('ไม่สามารถดึง VAPID key ได้')
+                    console.warn('ไม่สามารถดึง VAPID key ได้:', response.status, response.statusText)
                     return
                 }
                 const { publicKey } = await response.json()
+
+                if (!publicKey) {
+                    console.warn('VAPID public key ว่างเปล่า')
+                    return
+                }
 
                 // แปลง base64 URL-safe เป็น Uint8Array
                 const applicationServerKey = this._urlBase64ToUint8Array(publicKey)
 
                 // สร้าง push subscription
-                subscription = await this.swRegistration.pushManager.subscribe({
+                subscription = await registration.pushManager.subscribe({
                     userVisibleOnly: true,
                     applicationServerKey,
                 })
+                console.log('Push subscription สร้างเรียบร้อย')
+            } else {
+                console.log('Push subscription มีอยู่แล้ว')
             }
 
             this.pushSubscription = subscription
 
             // ส่ง subscription ไป server เพื่อบันทึก
             const token = localStorage.getItem('token')
-            if (!token) return
+            if (!token) {
+                console.warn('ไม่มี auth token — ไม่สามารถบันทึก push subscription ได้')
+                return
+            }
 
             const subJSON = subscription.toJSON()
-            await fetch('/api/push/subscribe', {
+            const saveResponse = await fetch('/api/push/subscribe', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -599,7 +617,13 @@ class NotificationManager {
                 }),
             })
 
-            console.log('Push subscription สำเร็จ')
+            if (!saveResponse.ok) {
+                const errorData = await saveResponse.json().catch(() => ({}))
+                console.error('บันทึก push subscription ไม่สำเร็จ:', saveResponse.status, errorData)
+                return
+            }
+
+            console.log('Push subscription บันทึกสำเร็จ')
         } catch (error) {
             console.error('Push subscription ล้มเหลว:', error)
         }

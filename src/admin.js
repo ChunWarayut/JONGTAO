@@ -52,15 +52,16 @@ class AdminApp {
         this.renderView('dashboard');
         this.setupRealtimeFeed();
 
-        // Request browser notification permission after login (requires user gesture context)
+        // Request browser notification permission after login, then register push
+        // IMPORTANT: ต้องรอ permission ก่อน เพราะ pushManager.subscribe() ต้องการ 'granted'
         notifications.requestBrowserPermission().then(permission => {
             if (permission === 'denied') {
                 console.info('Browser notifications denied — OS-level alerts will not appear.')
+                return
             }
+            // ลงทะเบียน Service Worker + Web Push สำหรับ notification แม้ปิดเบราว์เซอร์
+            notifications.registerPushSubscription()
         });
-
-        // ลงทะเบียน Service Worker + Web Push สำหรับ notification แม้ปิดเบราว์เซอร์
-        notifications.registerPushSubscription();
     }
 
     setupRealtimeFeed() {

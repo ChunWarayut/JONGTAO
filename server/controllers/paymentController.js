@@ -1,4 +1,4 @@
-import { prisma } from '../index.js'
+import { prisma } from '../lib/prisma.js'
 import { notifyClients } from './bookingController.js'
 import { sendPushToAll } from '../services/pushService.js'
 
