@@ -6,6 +6,7 @@ import CustomerForm from './components/CustomerForm.js';
 import Payment from './components/Payment.js';
 import Confirmation from './components/Confirmation.js';
 import client from './api/client.js';
+import { getSessionId } from './utils/session.js';
 
 class App {
     constructor() {
@@ -18,6 +19,8 @@ class App {
         this.config = null;
         this.currentViewInstance = null;
         this.sseSource = null;
+        this.sessionId = getSessionId();
+        this.holdTimerInterval = null;
         this.loadFromStorage();
         this.attachGlobalEvents();
         this.init();
@@ -45,10 +48,107 @@ class App {
     async resetBookingFlow() {
         const confirmed = await showConfirm('คุณต้องการยกเลิกและเริ่มจองใหม่ใช่หรือไม่?\nข้อมูลที่กรอกไว้จะถูกลบทั้งหมด');
         if (confirmed) {
+            await this.releaseHold();
+            this.stopHoldTimer();
             this.clearStorage();
             this.reservation = this.getDefaultReservation();
             this.goToStep(1);
         }
+    }
+
+    // ---- Table hold countdown -------------------------------------------------
+    // From the moment a table is picked until payment is submitted, the customer
+    // holds the table. If the countdown hits zero the hold is released server-side
+    // (cleanup job) and here we drop them back to the map.
+
+    async releaseHold() {
+        if (!this.reservation || !this.reservation.tableId) return;
+        try {
+            await client.delete('/holds', {
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ sessionId: this.sessionId, tableId: this.reservation.tableId })
+            });
+        } catch (e) {
+            console.error('Failed to release hold', e);
+        }
+    }
+
+    startHoldTimer(expiresAt) {
+        this.reservation.holdExpiresAt = expiresAt;
+        this.saveToStorage();
+        this.stopHoldTimer(false); // clear any previous interval without wiping state
+        this.renderHoldBanner();
+        this.holdTimerInterval = setInterval(() => this.renderHoldBanner(), 1000);
+    }
+
+    stopHoldTimer(clearState = true) {
+        if (this.holdTimerInterval) {
+            clearInterval(this.holdTimerInterval);
+            this.holdTimerInterval = null;
+        }
+        const banner = document.querySelector('#hold-timer-banner');
+        if (banner) banner.remove();
+        if (clearState && this.reservation) {
+            this.reservation.holdExpiresAt = null;
+        }
+    }
+
+    async onHoldExpired() {
+        this.stopHoldTimer();
+        await this.releaseHold();
+        if (this.reservation) {
+            this.reservation.table = null;
+            this.reservation.tableId = null;
+        }
+        this.saveToStorage();
+        await showAlert('⏰ หมดเวลาในการจอง ระบบได้คืนโต๊ะให้ลูกค้าท่านอื่นแล้ว กรุณาเลือกโต๊ะใหม่อีกครั้ง');
+        this.goToStep(1);
+    }
+
+    renderHoldBanner() {
+        const expiresAt = this.reservation && this.reservation.holdExpiresAt;
+        // Only show the countdown while a table is held and before completion.
+        if (!expiresAt || this.currentStep < 2 || this.currentStep >= 6) {
+            const existing = document.querySelector('#hold-timer-banner');
+            if (existing) existing.remove();
+            return;
+        }
+
+        const msLeft = new Date(expiresAt).getTime() - Date.now();
+        if (msLeft <= 0) {
+            this.onHoldExpired();
+            return;
+        }
+
+        const totalSec = Math.floor(msLeft / 1000);
+        const mm = String(Math.floor(totalSec / 60)).padStart(2, '0');
+        const ss = String(totalSec % 60).padStart(2, '0');
+        const urgent = totalSec <= 60;
+
+        let banner = document.querySelector('#hold-timer-banner');
+        if (!banner) {
+            banner = document.createElement('div');
+            banner.id = 'hold-timer-banner';
+            document.body.appendChild(banner);
+            const style = document.createElement('style');
+            style.textContent = `
+                #hold-timer-banner {
+                    position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%);
+                    z-index: 9000; display: flex; align-items: center; gap: 10px;
+                    padding: 10px 18px; border-radius: var(--radius-full);
+                    background: rgba(20,20,28,0.92); backdrop-filter: blur(10px);
+                    border: 1px solid var(--glass-border); box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+                    font-weight: 700; font-size: 0.95rem; color: white; white-space: nowrap;
+                }
+                #hold-timer-banner.urgent { border-color: var(--danger); animation: holdBlink 1s steps(2) infinite; }
+                #hold-timer-banner .ht-time { font-family: 'Outfit', monospace; font-size: 1.1rem; }
+                #hold-timer-banner.urgent .ht-time { color: #fca5a5; }
+                @keyframes holdBlink { 50% { opacity: 0.55; } }
+            `;
+            document.head.appendChild(style);
+        }
+        banner.className = urgent ? 'urgent' : '';
+        banner.innerHTML = `<span>⏳ จองโต๊ะภายใน</span><span class="ht-time">${mm}:${ss}</span>`;
     }
 
     saveToStorage() {
@@ -96,10 +196,25 @@ class App {
                 this.reservation.lockedDate = true;
                 this.currentStep = 1;
             }
+        } else if (this.reservation.lockedDate) {
+            // No date in the current URL. A `lockedDate` here is stale — left in
+            // localStorage from a previous event-link (?date=) visit — and would
+            // wrongly keep the date picker locked. Always unlock so the user can
+            // choose a date freely. Only forget the date itself when nothing is in
+            // progress (don't wipe an in-progress booking's date).
+            this.reservation.lockedDate = false;
+            if (!this.reservation.id && !this.reservation.zone) {
+                this.reservation.bookingDate = null;
+            }
         }
 
         this.setupRealtimeFeed();
         this.goToStep(this.currentStep);
+
+        // Resume an in-progress hold countdown after a reload (or expire it if time's up).
+        if (this.reservation.holdExpiresAt && this.currentStep >= 2 && this.currentStep < 6) {
+            this.startHoldTimer(this.reservation.holdExpiresAt);
+        }
     }
 
     setupRealtimeFeed() {
@@ -107,12 +222,27 @@ class App {
         this.sseSource = new EventSource('/api/bookings/stream');
 
         this.sseSource.onmessage = async (e) => {
-            if (e.data === 'update') {
-                // Soft refresh the map if the user is currently on Step 1 (Zone Selection)
+            let event = {};
+            try { event = JSON.parse(e.data); } catch { event = { type: e.data }; }
+
+            // Soft refresh the map on Step 1 when bookings/holds change so taken tables
+            // (booked OR held by others) update live and can't be selected.
+            const mapAffecting = ['update', 'new_booking', 'holds_update'].includes(event.type);
+            if (mapAffecting) {
                 if (this.currentStep === 1 && this.currentViewInstance && typeof this.currentViewInstance.render === 'function') {
                     await this.currentViewInstance.render(this.container);
+                    // The map render is async. If the user advanced past Step 1 while it was
+                    // in flight (e.g. they just confirmed a table — which itself triggers a
+                    // holds_update broadcast back to us), this stale render would clobber the
+                    // new screen and look like a "bounce back to table select". Re-render the
+                    // correct step to undo that.
+                    if (this.currentStep !== 1) {
+                        this.renderStep(this.currentStep);
+                    }
                 }
+            }
 
+            if (event.type === 'update' || event.type === 'new_booking') {
                 // If on Step 6 (Confirmation) and we have a booking ID, refresh the status
                 if (this.currentStep === 6 && this.reservation.id) {
                     try {
@@ -167,6 +297,7 @@ class App {
 
         this.saveToStorage();
         this.renderStep(step);
+        this.renderHoldBanner();
         window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
@@ -178,6 +309,10 @@ class App {
             case 1:
                 this.currentViewInstance = new AllZonesTableMap(this.reservation, (zone) => {
                     this.reservation.zone = zone;
+                    // Hold was just placed by the map; start the countdown to payment.
+                    if (this.reservation.holdExpiresAt) {
+                        this.startHoldTimer(this.reservation.holdExpiresAt);
+                    }
                     this.goToStep(2);
                 });
                 this.currentViewInstance.render(this.container);
@@ -247,9 +382,19 @@ class App {
         </style>
       `;
 
+            // Stable per-attempt key so retries (double-tap / flaky network) don't
+            // create duplicate bookings. Reused across retries of THIS submission;
+            // a fresh booking gets a new key (cleared on success / reset).
+            if (!this.reservation.idempotencyKey) {
+                this.reservation.idempotencyKey = (crypto.randomUUID && crypto.randomUUID()) ||
+                    `${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`;
+                this.saveToStorage();
+            }
+
             const payload = {
                 zoneId: this.reservation.zone.id,
                 tableId: this.reservation.tableId,
+                idempotencyKey: this.reservation.idempotencyKey,
                 guestCount: this.reservation.guestCount,
                 extraTable: this.reservation.extraTable,
                 totalAmount: this.reservation.payment.totalAmount,
@@ -261,10 +406,14 @@ class App {
                 occasion: this.reservation.customer.occasion,
                 note: this.reservation.customer.note,
                 bookingDate: this.reservation.bookingDate ? new Date(this.reservation.bookingDate + 'T00:00:00').toISOString() : new Date().toISOString(),
-                paymentMethod: this.reservation.payment.method
+                paymentMethod: this.reservation.payment.method,
+                sessionId: this.sessionId
             };
 
             const result = await client.post('/bookings', payload);
+            // Booking succeeded — the server consumed our hold; stop the countdown.
+            this.stopHoldTimer();
+            this.reservation.idempotencyKey = null;
             this.reservation.id = result.id;
             this.reservation.qrCode = result.qrCode;
 
@@ -281,7 +430,29 @@ class App {
             this.clearStorage();
             this.goToStep(6);
         } catch (error) {
-            await showAlert('เกิดข้อผิดพลาด: ' + error.message);
+            const msg = error.message || '';
+            // Hold expired (didn't pay in time) — table was released.
+            if (msg.includes('หมดเวลา')) {
+                this.stopHoldTimer();
+                this.reservation.table = null;
+                this.reservation.tableId = null;
+                this.reservation.idempotencyKey = null;
+                await showAlert(msg);
+                this.goToStep(1);
+                return;
+            }
+            // Table got booked by someone else in the meantime (backend 409 guard).
+            // Clear the chosen table and send the user back to the map to pick another.
+            if (msg.includes('ถูกจองไปแล้ว')) {
+                this.stopHoldTimer();
+                this.reservation.idempotencyKey = null;
+                await showAlert(msg);
+                this.reservation.table = null;
+                this.reservation.tableId = null;
+                this.goToStep(1);
+                return;
+            }
+            await showAlert('เกิดข้อผิดพลาด: ' + msg);
             this.goToStep(5);
         }
     }

@@ -50,6 +50,12 @@ export default class Settings {
               </div>
             </div>
 
+            <div class="form-group" style="padding: var(--spacing-md); background: rgba(255,255,255,0.02); border-radius: var(--radius-md); border: 1px solid var(--glass-border);">
+              <label for="holdMinutes" style="display: block; font-weight: 700; font-size: 1.05rem; margin-bottom: 4px;">เวลาจับจองโต๊ะ (นาที)</label>
+              <div style="font-size: 0.8rem; color: var(--text-dim); margin-bottom: 10px;">ตั้งแต่ลูกค้าเลือกโต๊ะจนต้องชำระเงินให้เสร็จ ถ้าเกินเวลานี้ระบบจะคืนโต๊ะให้คนอื่นจองได้</div>
+              <input type="number" id="holdMinutes" min="1" max="120" value="${config.holdMinutes ?? 15}" class="form-control-pro" style="text-align: center; font-size: 1.1rem; font-weight: 700; max-width: 140px;">
+            </div>
+
             <!-- Bank Account Info -->
             <div style="padding: 16px; background: rgba(255,255,255,0.02); border-radius: 12px; border: 1px solid rgba(212,32,32,0.15);">
               <h3 style="font-weight: 700; font-size: 0.9rem; margin-bottom: 4px; color: white;">ข้อมูลบัญชีธนาคาร</h3>
@@ -175,6 +181,7 @@ export default class Settings {
         isBookingFeeRequired: container.querySelector('#isBookingFeeRequired').checked,
         openTime: container.querySelector('#openTime').value,
         closeTime: container.querySelector('#closeTime').value,
+        holdMinutes: parseInt(container.querySelector('#holdMinutes').value) || 15,
         bankName: container.querySelector('#bankName').value,
         bankAccountNumber: container.querySelector('#bankAccountNumber').value,
         bankAccountName: container.querySelector('#bankAccountName').value,

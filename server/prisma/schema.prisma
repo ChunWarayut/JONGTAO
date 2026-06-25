@@ -29,14 +29,31 @@ model Zone {
 }
 
 model Table {
-  id       Int       @id @default(autoincrement())
-  number   String    @unique
-  x        Float     @default(0)
-  y        Float     @default(0)
-  status   String    @default("active")
+  id       Int         @id @default(autoincrement())
+  number   String      @unique
+  x        Float       @default(0)
+  y        Float       @default(0)
+  status   String      @default("active")
   zoneId   Int
   bookings Booking[]
-  zone     Zone      @relation(fields: [zoneId], references: [id])
+  holds    TableHold[]
+  zone     Zone        @relation(fields: [zoneId], references: [id])
+}
+
+// Temporary hold placed on a table the moment a customer selects it, so no one
+// else can pick the same table while they finish the booking flow. Holds expire
+// after AppConfig.holdMinutes; a background job + lazy reads release stale ones.
+model TableHold {
+  id          Int      @id @default(autoincrement())
+  tableId     Int
+  bookingDate DateTime
+  sessionId   String
+  expiresAt   DateTime
+  createdAt   DateTime @default(now())
+  table       Table    @relation(fields: [tableId], references: [id])
+
+  @@index([tableId])
+  @@index([expiresAt])
 }
 
 model Booking {
@@ -55,6 +72,7 @@ model Booking {
   note             String?
   status           String   @default("pending")
   qrCode           String   @unique
+  idempotencyKey   String?  @unique
   paymentMethod    String?
   paymentStatus    String   @default("unpaid")
   slipImageUrl     String?
@@ -72,6 +90,7 @@ model AppConfig {
   openTime             String  @default("18:00")
   closeTime            String  @default("02:00")
   isBookingFeeRequired Boolean @default(true)
+  holdMinutes          Int     @default(15)
   bankName             String?
   bankAccountNumber    String?
   bankAccountName      String?

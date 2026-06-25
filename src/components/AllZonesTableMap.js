@@ -1,4 +1,6 @@
 import client from '../api/client.js';
+import { getSessionId } from '../utils/session.js';
+import { showAlert } from '../utils/dialog.js';
 
 export default class AllZonesTableMap {
   constructor(reservation, onSelect) {
@@ -8,12 +10,14 @@ export default class AllZonesTableMap {
     this.tables = [];
     this.fixtures = [];
     this.bookedTableIds = [];
+    this.heldByOthersTableIds = [];
     this.selectedTable = null;
     this.selectedZone = null;
     this.mobileScale = 1;
     this.userZoomScale = 1;
     this.selectedDate = this.reservation.bookingDate || this.getTodayDate();
     this.specialDate = null;
+    this.sessionId = getSessionId();
   }
 
   getTodayDate() {
@@ -79,9 +83,25 @@ export default class AllZonesTableMap {
       console.error('Failed to fetch bookings:', error);
       this.bookedTableIds = [];
     }
+    await this.fetchHoldsForDate(date);
+  }
+
+  async fetchHoldsForDate(date) {
+    try {
+      const holds = await client.get(`/holds/public?date=${date}`);
+      // Tables another customer is currently holding — unavailable for selection.
+      // Our own hold (same sessionId) stays selectable so we can revisit it.
+      this.heldByOthersTableIds = holds
+        .filter(h => h.sessionId !== this.sessionId)
+        .map(h => h.tableId);
+    } catch (error) {
+      console.error('Failed to fetch holds:', error);
+      this.heldByOthersTableIds = [];
+    }
   }
 
   renderAllZonesMap(container) {
+    this.container = container;
     const minDate = this.getTodayDate();
     const maxDate = new Date();
     maxDate.setDate(maxDate.getDate() + 30);
@@ -166,18 +186,29 @@ export default class AllZonesTableMap {
             <div id="customer-tables-container" style="position: absolute; inset: 0; z-index: 10;">
               ${this.tables.map(table => {
                 const isBooked = this.bookedTableIds.includes(table.id);
+                const isHeld = this.heldByOthersTableIds.includes(table.id);
+                const isUnavailable = isBooked || isHeld;
                 const tableZone = this.zones.find(z => z.id === table.zoneId);
-                const isSelectable = !isBooked;
+                const isSelectable = !isUnavailable;
 
-                const baseColor = isSelectable && tableZone ? tableZone.color : '#4a4a5a';
-                const opacity = isSelectable ? '1' : '0.4';
+                // Distinct fill per state so "someone is choosing this right now" (amber)
+                // reads differently from "already booked" (gray) and "available" (zone colour).
+                let baseColor, opacity;
+                if (isBooked) {
+                  baseColor = '#4a4a5a'; opacity = '0.4';
+                } else if (isHeld) {
+                  baseColor = '#f59e0b'; opacity = '0.92';   // amber = being selected by someone
+                } else {
+                  baseColor = tableZone ? tableZone.color : '#4a4a5a'; opacity = '1';
+                }
                 const cursor = isSelectable ? 'pointer' : 'not-allowed';
                 const boxShadow = isSelectable ? `0 4px 12px rgba(0,0,0,0.5), 0 0 5px ${baseColor}44` : 'none';
 
                 return `
-                  <div class="table-map-item ${isBooked ? 'booked' : ''} ${isSelectable ? 'selectable' : ''}"
+                  <div class="table-map-item ${isUnavailable ? 'booked' : ''} ${isHeld && !isBooked ? 'held' : ''} ${isSelectable ? 'selectable' : ''}"
                        data-id="${table.id}"
                        data-zone-id="${table.zoneId}"
+                       title="${isHeld && !isBooked ? 'กำลังถูกเลือกโดยลูกค้าท่านอื่น' : ''}"
                        style="position: absolute; left: ${table.x}%; top: ${table.y}%; background-color: ${baseColor}; opacity: ${opacity}; cursor: ${cursor}; box-shadow: ${boxShadow};">
                     ${table.number}
                   </div>
@@ -195,7 +226,7 @@ export default class AllZonesTableMap {
 
         <div style="text-align: center; padding: var(--spacing-md); margin-top: var(--spacing-sm); background: rgba(6, 182, 212, 0.1); border: 1px solid var(--accent-neon); border-radius: var(--radius-md);">
           <p style="color: var(--accent-neon); font-size: 0.85rem; font-weight: 600; margin-bottom: 4px; display: flex; align-items: center; justify-content: center; gap: 6px;"><i data-lucide="lightbulb" style="width: 16px; height: 16px;"></i> คำแนะนำ</p>
-          <p style="color: var(--text-dim); font-size: 0.75rem;">โต๊ะที่มีไอคอน <i data-lucide="lock" style="width: 12px; height: 12px; display: inline;"></i> หรือสีเทาถูกจองแล้ว • คลิกโต๊ะที่ต้องการเพื่อดูรายละเอียดและจอง • ใช้ปุ่ม +/− เพื่อซูม</p>
+          <p style="color: var(--text-dim); font-size: 0.75rem;">โต๊ะสีเทาถูกจองแล้ว • โต๊ะสีเหลืองกำลังถูกเลือกโดยลูกค้าท่านอื่น • คลิกโต๊ะที่ต้องการเพื่อดูรายละเอียดและจอง • ใช้ปุ่ม +/− เพื่อซูม</p>
         </div>
       </div>
 
@@ -276,6 +307,16 @@ export default class AllZonesTableMap {
           box-shadow: 0 0 20px rgba(255,255,255,0.3), 0 8px 15px rgba(0,0,0,0.5) !important;
           z-index: 15;
           border-color: rgba(255,255,255,0.4);
+        }
+        /* Table another customer is currently holding (not yet booked) — amber fill + pulse */
+        .table-map-item.held {
+          border-color: rgba(255, 255, 255, 0.85) !important;
+          color: #1a1a1a;
+          animation: heldPulse 1.2s ease-in-out infinite;
+        }
+        @keyframes heldPulse {
+          0%, 100% { box-shadow: 0 0 4px rgba(245, 158, 11, 0.5); }
+          50% { box-shadow: 0 0 16px rgba(245, 158, 11, 0.95); }
         }
 
         /* Mobile responsive - scale to fit like desktop */
@@ -705,12 +746,33 @@ export default class AllZonesTableMap {
       if (e.target === backdrop) closePopup();
     });
 
-    backdrop.querySelector('#btn-confirm-table-popup').addEventListener('click', () => {
-      this.reservation.zone = { ...this.selectedZone, seats: this.selectedZone.seatsPerTable };
-      this.reservation.table = this.selectedTable;
-      this.reservation.tableId = this.selectedTable.id;
-      closePopup();
-      this.onSelect(this.reservation.zone);
+    backdrop.querySelector('#btn-confirm-table-popup').addEventListener('click', async () => {
+      const confirmBtn = backdrop.querySelector('#btn-confirm-table-popup');
+      confirmBtn.disabled = true;
+      confirmBtn.style.opacity = '0.6';
+
+      try {
+        // Claim the table immediately so no one else can pick it. The server starts
+        // the countdown and returns when the hold expires (must pay before then).
+        const hold = await client.post('/holds', {
+          tableId: this.selectedTable.id,
+          bookingDate: this.selectedDate,
+          sessionId: this.sessionId
+        });
+
+        this.reservation.zone = { ...this.selectedZone, seats: this.selectedZone.seatsPerTable };
+        this.reservation.table = this.selectedTable;
+        this.reservation.tableId = this.selectedTable.id;
+        this.reservation.bookingDate = this.selectedDate;
+        this.reservation.holdExpiresAt = hold.expiresAt;
+        closePopup();
+        this.onSelect(this.reservation.zone);
+      } catch (error) {
+        // Someone grabbed it first (booked or held) — tell the user and refresh the map.
+        closePopup();
+        await showAlert(error.message || 'ไม่สามารถเลือกโต๊ะนี้ได้ กรุณาเลือกโต๊ะอื่น');
+        if (this.container) await this.render(this.container);
+      }
     });
 
     const fadeOutStyle = document.createElement('style');

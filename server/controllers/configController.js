@@ -15,7 +15,8 @@ export const getConfig = async (req, res) => {
                     isBookingOpen: true,
                     openTime: "18:00",
                     closeTime: "02:00",
-                    isBookingFeeRequired: true
+                    isBookingFeeRequired: true,
+                    holdMinutes: 15
                 }
             })
         }
@@ -28,7 +29,7 @@ export const getConfig = async (req, res) => {
 }
 
 export const updateConfig = async (req, res) => {
-    const { isBookingOpen, openTime, closeTime, isBookingFeeRequired, bankName, bankAccountNumber, bankAccountName, promptPayNumber } = req.body
+    const { isBookingOpen, openTime, closeTime, isBookingFeeRequired, holdMinutes, bankName, bankAccountNumber, bankAccountName, promptPayNumber } = req.body
 
     try {
         const config = await prisma.appConfig.update({
@@ -38,6 +39,7 @@ export const updateConfig = async (req, res) => {
                 openTime,
                 closeTime,
                 isBookingFeeRequired,
+                ...(holdMinutes != null ? { holdMinutes: parseInt(holdMinutes) } : {}),
                 bankName,
                 bankAccountNumber,
                 bankAccountName,

@@ -22,6 +22,8 @@ import paymentRoutes from './routes/payment.js'
 import fixtureRoutes from './routes/fixtures.js'
 import specialDateRoutes from './routes/specialDates.js'
 import pushRoutes from './routes/push.js'
+import holdRoutes from './routes/holds.js'
+import { cleanupExpiredHolds } from './controllers/holdController.js'
 
 const app = express()
 const PORT = process.env.PORT || 3001
@@ -48,6 +50,7 @@ app.use('/api/config', configRoutes)
 app.use('/api/fixtures', fixtureRoutes)
 app.use('/api/special-dates', specialDateRoutes)
 app.use('/api/push', pushRoutes)
+app.use('/api/holds', holdRoutes)
 
 // Error handling middleware
 app.use((err, req, res, next) => {
@@ -78,5 +81,8 @@ app.get('*', (req, res) => {
 app.listen(PORT, () => {
     console.log(`Server is running on http://localhost:${PORT}`)
 })
+
+// Periodically release expired table holds so abandoned selections free up for others.
+setInterval(() => { cleanupExpiredHolds() }, 60 * 1000)
 
 export { prisma }
