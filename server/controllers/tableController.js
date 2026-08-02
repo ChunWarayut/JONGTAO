@@ -43,7 +43,12 @@ export const bulkUpsertTables = async (req, res) => {
 export const deleteTable = async (req, res) => {
     const { id } = req.params
     try {
-        // First disconnect any bookings associated with this table
+        // First disconnect any bookings associated with this table. BookingTable rows must
+        // go too — the foreign key is RESTRICT, so leaving them would block the delete.
+        await prisma.bookingTable.deleteMany({
+            where: { tableId: parseInt(id) }
+        })
+
         await prisma.booking.updateMany({
             where: { tableId: parseInt(id) },
             data: { tableId: null }

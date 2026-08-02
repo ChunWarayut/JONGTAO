@@ -7,6 +7,11 @@ export default class Confirmation {
   render(container) {
     const { customer, zone, table, guestCount, extraTable, payment, qrCode, id } = this.reservation;
 
+    // A booking can span several tables; fall back to the single-table field for
+    // reservations made before multi-table selection existed.
+    const bookedTables = (this.reservation.tables?.length ? this.reservation.tables : (table ? [table] : []));
+    const tableNumbers = bookedTables.map(t => t.number).join(', ') || 'N/A';
+
     const isPaid = this.reservation.paymentStatus === 'paid' || this.reservation.status === 'confirmed';
     const isPendingVerification = this.reservation.paymentStatus === 'pending_verification';
     const isRejected = this.reservation.paymentStatus === 'slip_rejected';
@@ -130,8 +135,8 @@ export default class Confirmation {
               <div style="display: flex; align-items: center; gap: 10px;">
                 <i data-lucide="armchair" style="width: 20px; height: 20px; color: var(--accent-gold);"></i>
                 <div>
-                  <div style="font-size: 0.7rem; color: var(--text-dim);">TABLE / โต๊ะ</div>
-                  <strong style="font-family: 'Outfit';">No. ${table ? table.number : 'N/A'}</strong>
+                  <div style="font-size: 0.7rem; color: var(--text-dim);">TABLE / โต๊ะ${bookedTables.length > 1 ? ` (${bookedTables.length} โต๊ะ)` : ''}</div>
+                  <strong style="font-family: 'Outfit';">No. ${tableNumbers}</strong>
                 </div>
               </div>
               <div style="display: flex; align-items: center; gap: 10px; grid-column: span 2;">

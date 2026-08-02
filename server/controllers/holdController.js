@@ -50,12 +50,14 @@ export const createHold = async (req, res) => {
 
         const hold = await withWriteRetry(() => prisma.$transaction(async (tx) => {
             // 1. Confirmed/pending booking already owns this table on this day?
-            const bookings = await tx.booking.findMany({
-                where: { tableId: parsedTableId, status: { not: 'cancelled' } },
-                select: { bookingDate: true }
+            //    Read BookingTable so a table booked as someone's *second* table counts too.
+            const bookedRows = await tx.bookingTable.findMany({
+                where: { tableId: parsedTableId },
+                select: { booking: { select: { status: true, bookingDate: true } } }
             })
-            const isBooked = bookings.some((b) => {
-                const d = new Date(b.bookingDate)
+            const isBooked = bookedRows.some(({ booking }) => {
+                if (!booking || booking.status === 'cancelled') return false
+                const d = new Date(booking.bookingDate)
                 return d >= startOfDayBKK && d < startOfTomorrowBKK
             })
             if (isBooked) {
@@ -79,12 +81,26 @@ export const createHold = async (req, res) => {
                 throw err
             }
 
-            // 3. A session may hold only one table at a time — drop any earlier hold
-            //    (covers the case where the customer goes back and picks a different table).
-            await tx.tableHold.deleteMany({ where: { sessionId } })
+            // 3. A session may hold several tables, but only for one night. Drop this
+            //    session's holds for any other date (the customer changed the date) and
+            //    any stale hold on this very table, then re-create it below.
+            const ownHolds = await tx.tableHold.findMany({
+                where: { sessionId },
+                select: { id: true, tableId: true, bookingDate: true }
+            })
+            const staleIds = ownHolds
+                .filter((h) => {
+                    const d = new Date(h.bookingDate)
+                    const otherDate = !(d >= startOfDayBKK && d < startOfTomorrowBKK)
+                    return otherDate || h.tableId === parsedTableId
+                })
+                .map((h) => h.id)
+            if (staleIds.length) {
+                await tx.tableHold.deleteMany({ where: { id: { in: staleIds } } })
+            }
 
             // 4. Create the fresh hold.
-            return tx.tableHold.create({
+            const created = await tx.tableHold.create({
                 data: {
                     tableId: parsedTableId,
                     bookingDate: bookingDateObj,
@@ -92,6 +108,13 @@ export const createHold = async (req, res) => {
                     expiresAt
                 }
             })
+
+            // 5. One countdown covers the whole selection — push every table this session
+            //    still holds out to the same expiry, so tables picked earlier don't lapse
+            //    mid-checkout while the newest one is still fresh.
+            await tx.tableHold.updateMany({ where: { sessionId }, data: { expiresAt } })
+
+            return created
         }))
 
         notifyClients('holds_update', {})

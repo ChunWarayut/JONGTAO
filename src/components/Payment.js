@@ -9,8 +9,11 @@ export default class Payment {
   render(container) {
     const { zone, extraTable, specialDate } = this.reservation;
 
+    // Every table in the booking carries the zone's minimum spend.
+    const tableCount = this.reservation.tableCount || this.reservation.tableIds?.length || 1;
+
     let isFeeRequired = window.appConfig?.isBookingFeeRequired ?? true;
-    let totalMinSpend = zone.minSpend + (extraTable ? zone.extraTableCost : 0);
+    let totalMinSpend = zone.minSpend * tableCount + (extraTable ? zone.extraTableCost : 0);
     let depositAmount = 0;
     let priceNote = '';
 
@@ -30,7 +33,8 @@ export default class Payment {
           break;
         case 'custom':
           isFeeRequired = true;
-          depositAmount = specialDate.depositAmount || 0;
+          // The event's fixed price is per table, so it scales with the booking too.
+          depositAmount = (specialDate.depositAmount || 0) * tableCount;
           totalMinSpend = depositAmount;
           this.depositPercent = 100;
           priceNote = `<span style="display: inline-flex; align-items: center; gap: 6px;"><i data-lucide="credit-card" style="width: 16px; height: 16px;"></i> วันพิเศษ: ${specialDate.name}</span>`;

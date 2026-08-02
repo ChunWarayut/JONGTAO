@@ -11,7 +11,9 @@ export default class AllZonesTableMap {
     this.fixtures = [];
     this.bookedTableIds = [];
     this.heldByOthersTableIds = [];
-    this.selectedTable = null;
+    // A booking can span several tables. Restored from the reservation so stepping
+    // back from a later step shows the selection still in place (the holds survive too).
+    this.selectedTableIds = [...(reservation.tableIds || [])];
     this.selectedZone = null;
     this.mobileScale = 1;
     this.userZoomScale = 1;
@@ -76,9 +78,11 @@ export default class AllZonesTableMap {
   async fetchBookingsForDate(date) {
     try {
       const bookings = await client.get(`/bookings/public-status?date=${date}`);
+      // A booking occupies every table in its set, not just the primary one.
       this.bookedTableIds = bookings
-        .filter(b => b.status !== 'cancelled' && b.tableId)
-        .map(b => b.tableId);
+        .filter(b => b.status !== 'cancelled')
+        .flatMap(b => (b.tableIds && b.tableIds.length ? b.tableIds : [b.tableId]))
+        .filter(Boolean);
     } catch (error) {
       console.error('Failed to fetch bookings:', error);
       this.bookedTableIds = [];
@@ -187,17 +191,21 @@ export default class AllZonesTableMap {
               ${this.tables.map(table => {
                 const isBooked = this.bookedTableIds.includes(table.id);
                 const isHeld = this.heldByOthersTableIds.includes(table.id);
+                const isSelected = this.selectedTableIds.includes(table.id);
                 const isUnavailable = isBooked || isHeld;
                 const tableZone = this.zones.find(z => z.id === table.zoneId);
                 const isSelectable = !isUnavailable;
 
                 // Distinct fill per state so "someone is choosing this right now" (amber)
-                // reads differently from "already booked" (gray) and "available" (zone colour).
+                // reads differently from "already booked" (gray), "mine" (green) and
+                // "available" (zone colour).
                 let baseColor, opacity;
                 if (isBooked) {
                   baseColor = '#4a4a5a'; opacity = '0.4';
                 } else if (isHeld) {
                   baseColor = '#f59e0b'; opacity = '0.92';   // amber = being selected by someone
+                } else if (isSelected) {
+                  baseColor = '#10b981'; opacity = '1';      // green = in my selection
                 } else {
                   baseColor = tableZone ? tableZone.color : '#4a4a5a'; opacity = '1';
                 }
@@ -205,10 +213,10 @@ export default class AllZonesTableMap {
                 const boxShadow = isSelectable ? `0 4px 12px rgba(0,0,0,0.5), 0 0 5px ${baseColor}44` : 'none';
 
                 return `
-                  <div class="table-map-item ${isUnavailable ? 'booked' : ''} ${isHeld && !isBooked ? 'held' : ''} ${isSelectable ? 'selectable' : ''}"
+                  <div class="table-map-item ${isUnavailable ? 'booked' : ''} ${isHeld && !isBooked ? 'held' : ''} ${isSelected ? 'mine' : ''} ${isSelectable ? 'selectable' : ''}"
                        data-id="${table.id}"
                        data-zone-id="${table.zoneId}"
-                       title="${isHeld && !isBooked ? 'กำลังถูกเลือกโดยลูกค้าท่านอื่น' : ''}"
+                       title="${isHeld && !isBooked ? 'กำลังถูกเลือกโดยลูกค้าท่านอื่น' : (isSelected ? 'แตะอีกครั้งเพื่อเอาออก' : '')}"
                        style="position: absolute; left: ${table.x}%; top: ${table.y}%; background-color: ${baseColor}; opacity: ${opacity}; cursor: ${cursor}; box-shadow: ${boxShadow};">
                     ${table.number}
                   </div>
@@ -226,8 +234,10 @@ export default class AllZonesTableMap {
 
         <div style="text-align: center; padding: var(--spacing-md); margin-top: var(--spacing-sm); background: rgba(6, 182, 212, 0.1); border: 1px solid var(--accent-neon); border-radius: var(--radius-md);">
           <p style="color: var(--accent-neon); font-size: 0.85rem; font-weight: 600; margin-bottom: 4px; display: flex; align-items: center; justify-content: center; gap: 6px;"><i data-lucide="lightbulb" style="width: 16px; height: 16px;"></i> คำแนะนำ</p>
-          <p style="color: var(--text-dim); font-size: 0.75rem;">โต๊ะสีเทาถูกจองแล้ว • โต๊ะสีเหลืองกำลังถูกเลือกโดยลูกค้าท่านอื่น • คลิกโต๊ะที่ต้องการเพื่อดูรายละเอียดและจอง • ใช้ปุ่ม +/− เพื่อซูม</p>
+          <p style="color: var(--text-dim); font-size: 0.75rem;">แตะโต๊ะที่ต้องการเพื่อเลือก — เลือกได้มากกว่า 1 โต๊ะ (ต้องอยู่โซนเดียวกัน) • แตะซ้ำเพื่อเอาออก • โต๊ะสีเขียวคือโต๊ะที่คุณเลือกไว้ • โต๊ะสีเทาถูกจองแล้ว • โต๊ะสีเหลืองกำลังถูกเลือกโดยลูกค้าท่านอื่น • ใช้ปุ่ม +/− เพื่อซูม</p>
         </div>
+
+        <div id="selection-bar"></div>
       </div>
 
       <style>
@@ -318,6 +328,98 @@ export default class AllZonesTableMap {
           0%, 100% { box-shadow: 0 0 4px rgba(245, 158, 11, 0.5); }
           50% { box-shadow: 0 0 16px rgba(245, 158, 11, 0.95); }
         }
+        /* A table in my own selection */
+        .table-map-item.mine {
+          border-color: #ffffff !important;
+          border-width: 3px;
+          transform: scale(1.08);
+          box-shadow: 0 0 18px rgba(16, 185, 129, 0.8) !important;
+        }
+        .table-map-item.mine::after {
+          content: '✓';
+          position: absolute;
+          top: -8px;
+          right: -8px;
+          width: 20px;
+          height: 20px;
+          border-radius: 50%;
+          background: #ffffff;
+          color: #10b981;
+          font-size: 0.7rem;
+          font-weight: 900;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          box-shadow: 0 2px 6px rgba(0,0,0,0.5);
+        }
+        .table-map-item { position: absolute; }
+
+        /* Selection summary */
+        .selection-bar {
+          position: sticky;
+          bottom: 0;
+          margin-top: var(--spacing-md);
+          padding: var(--spacing-lg);
+          background: var(--bg-surface);
+          border: 2px solid var(--success);
+          border-radius: var(--radius-lg);
+          box-shadow: 0 -8px 30px rgba(0,0,0,0.6);
+          z-index: 50;
+        }
+        .selection-bar.empty {
+          border-color: var(--glass-border);
+          text-align: center;
+          color: var(--text-dim);
+          font-size: 0.9rem;
+          padding: var(--spacing-md);
+        }
+        .selection-chips {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 8px;
+          margin-bottom: var(--spacing-md);
+        }
+        .selection-chip {
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
+          padding: 6px 10px 6px 12px;
+          border-radius: var(--radius-full);
+          background: rgba(16, 185, 129, 0.15);
+          border: 1px solid rgba(16, 185, 129, 0.5);
+          color: white;
+          font-family: 'Outfit', sans-serif;
+          font-weight: 700;
+          font-size: 0.9rem;
+        }
+        .selection-chip button {
+          background: rgba(255,255,255,0.15);
+          border: none;
+          color: white;
+          width: 18px;
+          height: 18px;
+          border-radius: 50%;
+          cursor: pointer;
+          font-size: 0.8rem;
+          line-height: 1;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-family: inherit;
+        }
+        .selection-chip button:hover { background: var(--danger); }
+        .selection-totals {
+          display: flex;
+          flex-wrap: wrap;
+          gap: var(--spacing-md);
+          justify-content: space-between;
+          align-items: center;
+          padding-top: var(--spacing-sm);
+          border-top: 1px solid rgba(255,255,255,0.08);
+          margin-bottom: var(--spacing-md);
+        }
+        .selection-totals .lbl { color: var(--text-dim); font-size: 0.8rem; }
+        .selection-totals .val { font-family: 'Outfit', sans-serif; font-weight: 800; font-size: 1.15rem; color: white; }
 
         /* Mobile responsive - scale to fit like desktop */
         @media (max-width: 820px) {
@@ -372,6 +474,7 @@ export default class AllZonesTableMap {
     this.initZoom(container);
     this.attachTableEvents(container);
     this.attachDatePickerEvent(container);
+    this.renderSelectionBar();
 
     // Initialize Lucide icons
     if (typeof lucide !== 'undefined') {
@@ -565,228 +668,201 @@ export default class AllZonesTableMap {
   }
 
   attachTableEvents(container) {
-    // Map view tables only
+    // Map view tables only. Tapping toggles the table in/out of the selection —
+    // a booking may cover several tables, so there is no per-table confirm popup;
+    // the selection bar at the bottom carries the totals and the confirm button.
     container.querySelectorAll('.table-map-item.selectable').forEach(el => {
       el.addEventListener('click', () => {
         const tableId = parseInt(el.getAttribute('data-id'));
         const zoneId = parseInt(el.getAttribute('data-zone-id'));
-
-        this.selectedTable = this.tables.find(t => t.id === tableId);
-        this.selectedZone = this.zones.find(z => z.id === zoneId);
-
-        if (this.selectedTable && this.selectedZone) {
-          this.showTablePopup();
-        }
+        this.toggleTable(tableId, zoneId, el);
       });
     });
   }
 
-  showTablePopup() {
-    const backdrop = document.createElement('div');
-    backdrop.className = 'table-popup-backdrop';
-    backdrop.innerHTML = `
-      <div class="table-popup-modal">
-        <div class="table-popup-content glass-card" style="border-color: ${this.selectedZone.color};">
-          <button class="popup-close-btn" aria-label="Close">&times;</button>
+  selectedTables() {
+    return this.selectedTableIds
+      .map(id => this.tables.find(t => t.id === id))
+      .filter(Boolean);
+  }
 
-          <div class="popup-header" style="text-align: center; margin-bottom: var(--spacing-lg);">
-            <i data-lucide="armchair" style="width: 60px; height: 60px; margin-bottom: var(--spacing-sm); color: ${this.selectedZone.color};"></i>
-            <h3 class="font-heading" style="color: ${this.selectedZone.color}; font-size: 2rem; margin-bottom: var(--spacing-xs);">
-              โต๊ะ ${this.selectedTable.number}
-            </h3>
-            <p style="color: var(--text-dim); font-size: 0.95rem;">
-              โซน <strong style="color: white;">${this.selectedZone.name}</strong>
-            </p>
-          </div>
+  // The zone the current selection belongs to. Tables must share a zone: pricing is
+  // per-zone minimum spend and the rest of the flow carries a single zone.
+  currentZone() {
+    const first = this.selectedTables()[0];
+    return first ? this.zones.find(z => z.id === first.zoneId) : null;
+  }
 
-          <div class="popup-body">
-            <div style="padding: var(--spacing-lg); background: rgba(124, 58, 237, 0.1); border: 2px solid var(--primary); border-radius: var(--radius-md); margin-bottom: var(--spacing-lg); text-align: center;">
-              <div style="color: var(--text-muted); font-size: 0.8rem; margin-bottom: 4px; display: flex; align-items: center; justify-content: center; gap: 6px;"><i data-lucide="calendar" style="width: 14px; height: 14px;"></i> วันที่จอง</div>
-              <div style="color: white; font-weight: 700; font-size: 1rem;">${this.formatThaiDate(this.selectedDate)}</div>
-            </div>
+  async toggleTable(tableId, zoneId, el) {
+    const isSelected = this.selectedTableIds.includes(tableId);
 
-            ${this.specialDate ? `
-              <div style="margin-bottom: var(--spacing-lg); padding: var(--spacing-md); background: rgba(239, 68, 68, 0.12); border: 2px solid var(--danger); border-radius: var(--radius-md);">
-                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: var(--spacing-xs);">
-                  <i data-lucide="party-popper" style="width: 18px; height: 18px; color: #f87171;"></i>
-                  <strong style="color: #f87171; font-size: 0.95rem;">${this.specialDate.name}</strong>
-                </div>
-                ${this.specialDate.description ? `<p style="color: var(--text-muted); font-size: 0.8rem; margin-bottom: var(--spacing-xs);">${this.specialDate.description}</p>` : ''}
-                <div>${this.getPriceTypeLabel(this.specialDate.priceType, this.specialDate.depositAmount)}</div>
-              </div>
-            ` : ''}
+    if (!isSelected) {
+      const zone = this.currentZone();
+      if (zone && zone.id !== zoneId) {
+        const other = this.zones.find(z => z.id === zoneId);
+        await showAlert(
+          `เลือกได้เฉพาะโต๊ะในโซนเดียวกันครับ\n\nตอนนี้เลือกโซน ${zone.name} ไว้อยู่ ` +
+          `ถ้าต้องการโต๊ะในโซน ${other ? other.name : 'อื่น'} กรุณาเอาโต๊ะเดิมออกก่อน`
+        );
+        return;
+      }
+    }
 
-            <div style="padding: var(--spacing-lg); background: rgba(255,255,255,0.03); border: 1px solid var(--glass-border); border-radius: var(--radius-md); margin-bottom: var(--spacing-xl);">
-              ${!this.specialDate ? `
-                <div style="text-align: center; padding: var(--spacing-sm) 0;">
-                  <div style="font-size: 2rem; margin-bottom: 4px;">🎉</div>
-                  <div style="font-weight: 800; font-size: 1.3rem; color: var(--success);">จองฟรี ไม่มีค่าใช้จ่าย</div>
-                  <div style="font-size: 0.8rem; color: var(--text-dim); margin-top: 4px;">ไม่ต้องวางเงินล่วงหน้า</div>
-                </div>
-                <div style="margin-top: var(--spacing-md); padding: var(--spacing-sm) var(--spacing-md); background: rgba(251, 191, 36, 0.1); border: 1px solid rgba(251, 191, 36, 0.4); border-radius: var(--radius-sm); display: flex; align-items: flex-start; gap: 6px;">
-                  <i data-lucide="clock-alert" style="width: 14px; height: 14px; color: #fbbf24; margin-top: 2px; flex-shrink: 0;"></i>
-                  <span style="color: #fbbf24; font-size: 0.78rem; line-height: 1.5;">รับโต๊ะก่อน 21:00 น. — หลัง 21:00 น. ระบบจะยกเลิกโต๊ะโดยอัตโนมัติ</span>
-                </div>
-              ` : `
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--spacing-sm);">
-                  <span style="color: var(--text-dim); font-weight: 500;">ราคาจองขั้นต่ำ</span>
-                  <span style="font-weight: 800; font-size: 1.5rem; font-family: 'Outfit'; color: var(--accent-neon);">
-                    ${this.specialDate.priceType === 'custom' ? `฿${(this.specialDate.depositAmount || 0).toLocaleString()}` : `฿${this.selectedZone.minSpend.toLocaleString()}`}
-                  </span>
-                </div>
-                <div style="font-size: 0.75rem; color: var(--text-dim); margin-top: var(--spacing-sm); line-height: 1.4;">
-                  * ยอดล่วงหน้าสามารถใช้สั่งอาหาร/เครื่องดื่มในร้านได้เต็มจำนวน
-                </div>
-              `}
-              <div style="display: flex; justify-content: space-between; align-items: center; margin-top: var(--spacing-sm); padding-top: var(--spacing-sm); border-top: 1px solid rgba(255,255,255,0.05);">
-                <span style="color: var(--text-dim); font-weight: 500;">ความจุต่อโต๊ะ</span>
-                <span style="font-weight: 700; font-size: 1.1rem; font-family: 'Outfit';">${this.selectedZone.seatsPerTable} ที่นั่ง</span>
-              </div>
-            </div>
+    if (el) el.style.pointerEvents = 'none';
 
-            <button id="btn-confirm-table-popup" class="btn btn-primary" style="width: 100%; height: 56px; font-size: 1.15rem; font-weight: 700; background: ${!this.specialDate ? 'linear-gradient(135deg, var(--success), #059669)' : `linear-gradient(135deg, ${this.selectedZone.color}, var(--primary))`}; border-radius: var(--radius-md);">
-              ${!this.specialDate ? '🎉 จองฟรีเลย!' : 'ยืนยันเลือกโต๊ะนี้'} <span style="margin-left: 8px;">→</span>
-            </button>
-          </div>
-        </div>
-      </div>
-
-      <style>
-        .table-popup-backdrop {
-          position: fixed;
-          inset: 0;
-          background: rgba(0, 0, 0, 0.85);
-          backdrop-filter: blur(8px);
-          z-index: 9999;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          padding: var(--spacing-md);
-          animation: fadeIn 0.2s ease-out;
-        }
-
-        @keyframes fadeIn {
-          from { opacity: 0; }
-          to { opacity: 1; }
-        }
-
-        @keyframes slideUp {
-          from {
-            opacity: 0;
-            transform: translateY(30px) scale(0.95);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0) scale(1);
-          }
-        }
-
-        .table-popup-modal {
-          width: 100%;
-          max-width: 480px;
-          animation: slideUp 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-        }
-
-        .table-popup-content {
-          position: relative;
-          padding: var(--spacing-xl);
-          background: var(--bg-surface);
-          border-radius: var(--radius-lg);
-          border: 2px solid var(--glass-border);
-          box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8);
-          max-height: 90vh;
-          overflow-y: auto;
-        }
-
-        .popup-close-btn {
-          position: absolute;
-          top: 16px;
-          right: 16px;
-          background: rgba(255, 255, 255, 0.1);
-          border: 1px solid rgba(255, 255, 255, 0.2);
-          width: 40px;
-          height: 40px;
-          border-radius: 50%;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          font-size: 1.5rem;
-          color: white;
-          cursor: pointer;
-          transition: all 0.2s ease;
-          line-height: 1;
-        }
-
-        .popup-close-btn:hover {
-          background: rgba(255, 255, 255, 0.2);
-          transform: scale(1.1);
-        }
-
-        @media (max-width: 480px) {
-          .table-popup-content {
-            padding: var(--spacing-lg);
-          }
-
-          .popup-header h3 {
-            font-size: 1.75rem !important;
-          }
-        }
-      </style>
-    `;
-
-    document.body.appendChild(backdrop);
-
-    const closePopup = () => {
-      backdrop.style.animation = 'fadeOut 0.2s ease-out';
-      setTimeout(() => backdrop.remove(), 200);
-    };
-
-    backdrop.querySelector('.popup-close-btn').addEventListener('click', closePopup);
-    backdrop.addEventListener('click', (e) => {
-      if (e.target === backdrop) closePopup();
-    });
-
-    backdrop.querySelector('#btn-confirm-table-popup').addEventListener('click', async () => {
-      const confirmBtn = backdrop.querySelector('#btn-confirm-table-popup');
-      confirmBtn.disabled = true;
-      confirmBtn.style.opacity = '0.6';
-
-      try {
+    try {
+      if (isSelected) {
+        await client.delete('/holds', {
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ sessionId: this.sessionId, tableId })
+        });
+        this.selectedTableIds = this.selectedTableIds.filter(id => id !== tableId);
+      } else {
         // Claim the table immediately so no one else can pick it. The server starts
         // the countdown and returns when the hold expires (must pay before then).
         const hold = await client.post('/holds', {
-          tableId: this.selectedTable.id,
+          tableId,
           bookingDate: this.selectedDate,
           sessionId: this.sessionId
         });
+        this.selectedTableIds = [...this.selectedTableIds, tableId];
+        this.holdExpiresAt = hold.expiresAt;
+      }
 
-        this.reservation.zone = { ...this.selectedZone, seats: this.selectedZone.seatsPerTable };
-        this.reservation.table = this.selectedTable;
-        this.reservation.tableId = this.selectedTable.id;
-        this.reservation.bookingDate = this.selectedDate;
-        this.reservation.holdExpiresAt = hold.expiresAt;
-        closePopup();
-        this.onSelect(this.reservation.zone);
-      } catch (error) {
-        // Someone grabbed it first (booked or held) — tell the user and refresh the map.
-        closePopup();
-        await showAlert(error.message || 'ไม่สามารถเลือกโต๊ะนี้ได้ กรุณาเลือกโต๊ะอื่น');
-        if (this.container) await this.render(this.container);
+      this.paintTable(tableId);
+      this.renderSelectionBar();
+    } catch (error) {
+      // Someone grabbed it first (booked or held) — tell the user and refresh the map.
+      await showAlert(error.message || 'ไม่สามารถเลือกโต๊ะนี้ได้ กรุณาเลือกโต๊ะอื่น');
+      if (this.container) await this.render(this.container);
+      return;
+    } finally {
+      if (el) el.style.pointerEvents = '';
+    }
+  }
+
+  // Repaint one table in place rather than re-rendering the whole map, so the
+  // customer's zoom and scroll position survive a tap.
+  paintTable(tableId) {
+    if (!this.container) return;
+    const el = this.container.querySelector(`.table-map-item[data-id="${tableId}"]`);
+    const table = this.tables.find(t => t.id === tableId);
+    if (!el || !table) return;
+
+    const isSelected = this.selectedTableIds.includes(tableId);
+    const zone = this.zones.find(z => z.id === table.zoneId);
+    el.classList.toggle('mine', isSelected);
+    el.style.backgroundColor = isSelected ? '#10b981' : (zone ? zone.color : '#4a4a5a');
+    el.title = isSelected ? 'แตะอีกครั้งเพื่อเอาออก' : '';
+  }
+
+  // Minimum spend for the whole selection. Mirrors Payment.js — one table's price
+  // multiplied by the number of tables booked.
+  selectionPricing() {
+    const count = this.selectedTableIds.length;
+    const zone = this.currentZone();
+    if (!count || !zone) return { total: 0, free: true, perTable: 0 };
+
+    const sd = this.specialDate;
+    if (!sd || !sd.isActive || sd.priceType === 'free') {
+      return { total: 0, free: true, perTable: 0 };
+    }
+    const perTable = sd.priceType === 'custom'
+      ? (sd.depositAmount || 0)
+      : zone.minSpend;
+    return { total: perTable * count, free: false, perTable };
+  }
+
+  renderSelectionBar() {
+    const host = this.container?.querySelector('#selection-bar');
+    if (!host) return;
+
+    const tables = this.selectedTables();
+    const zone = this.currentZone();
+
+    if (!tables.length) {
+      host.innerHTML = `
+        <div class="selection-bar empty">
+          ยังไม่ได้เลือกโต๊ะ — แตะโต๊ะบนผังเพื่อเลือก (เลือกได้มากกว่า 1 โต๊ะ)
+        </div>`;
+      return;
+    }
+
+    const price = this.selectionPricing();
+    const seats = zone ? zone.seatsPerTable * tables.length : 0;
+
+    host.innerHTML = `
+      <div class="selection-bar">
+        <div style="display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: var(--spacing-sm);">
+          <strong style="color: var(--success); font-size: 1rem;">เลือกแล้ว ${tables.length} โต๊ะ</strong>
+          <span style="color: var(--text-dim); font-size: 0.85rem;">โซน ${zone ? zone.name : '-'}</span>
+        </div>
+
+        <div class="selection-chips">
+          ${tables.map(t => `
+            <span class="selection-chip">
+              ${t.number}
+              <button type="button" data-remove="${t.id}" aria-label="เอาโต๊ะ ${t.number} ออก">&times;</button>
+            </span>
+          `).join('')}
+        </div>
+
+        <div class="selection-totals">
+          <div>
+            <div class="lbl">ความจุรวม</div>
+            <div class="val">${seats} ที่นั่ง</div>
+          </div>
+          <div style="text-align: right;">
+            <div class="lbl">${price.free ? 'ค่าจอง' : `ยอดขั้นต่ำรวม (฿${price.perTable.toLocaleString()} × ${tables.length})`}</div>
+            <div class="val" style="color: ${price.free ? 'var(--success)' : 'var(--accent-neon)'};">
+              ${price.free ? '🎉 จองฟรี' : `฿${price.total.toLocaleString()}`}
+            </div>
+          </div>
+        </div>
+
+        <div style="display: flex; gap: 10px;">
+          <button type="button" id="btn-clear-selection" class="btn btn-ghost" style="flex: 0 0 auto; padding: 0 18px; height: 52px;">ล้าง</button>
+          <button type="button" id="btn-confirm-selection" class="btn btn-primary" style="flex: 1; height: 52px; font-size: 1.05rem; font-weight: 700; background: linear-gradient(135deg, var(--success), #059669); border-radius: var(--radius-md);">
+            ยืนยัน ${tables.length} โต๊ะ <span style="margin-left: 6px;">→</span>
+          </button>
+        </div>
+      </div>`;
+
+    host.querySelectorAll('[data-remove]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const id = parseInt(btn.getAttribute('data-remove'));
+        const table = this.tables.find(t => t.id === id);
+        this.toggleTable(id, table ? table.zoneId : null);
+      });
+    });
+
+    host.querySelector('#btn-clear-selection').addEventListener('click', async () => {
+      for (const id of [...this.selectedTableIds]) {
+        const table = this.tables.find(t => t.id === id);
+        await this.toggleTable(id, table ? table.zoneId : null);
       }
     });
 
-    const fadeOutStyle = document.createElement('style');
-    fadeOutStyle.textContent = `
-      @keyframes fadeOut {
-        from { opacity: 1; }
-        to { opacity: 0; }
-      }
-    `;
-    document.head.appendChild(fadeOutStyle);
+    host.querySelector('#btn-confirm-selection').addEventListener('click', () => this.confirmSelection());
+  }
 
-    // Initialize Lucide icons for popup
-    if (typeof lucide !== 'undefined') {
-      lucide.createIcons();
-    }
+  confirmSelection() {
+    const tables = this.selectedTables();
+    const zone = this.currentZone();
+    if (!tables.length || !zone) return;
+
+    // `seats` is the capacity of the whole booking — the guest-count step compares
+    // against it to decide whether an extra table is needed.
+    this.reservation.zone = { ...zone, seats: zone.seatsPerTable * tables.length };
+    this.reservation.tables = tables;
+    this.reservation.tableIds = tables.map(t => t.id);
+    this.reservation.tableCount = tables.length;
+    // First table mirrored into the legacy single-table fields.
+    this.reservation.table = tables[0];
+    this.reservation.tableId = tables[0].id;
+    this.reservation.bookingDate = this.selectedDate;
+    if (this.holdExpiresAt) this.reservation.holdExpiresAt = this.holdExpiresAt;
+
+    this.onSelect(this.reservation.zone);
   }
 }
