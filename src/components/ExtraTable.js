@@ -7,7 +7,11 @@ export default class ExtraTable {
 
   render(container) {
     const { zone } = this.reservation;
-    const totalMinSpend = zone.minSpend + (this.reservation.extraTable ? zone.extraTableCost : 0);
+    // The booking's own minimum spend scales with how many tables were selected;
+    // the extra table is a separate add-on charged once.
+    const tableCount = this.reservation.tableCount || this.reservation.tableIds?.length || 1;
+    const baseMinSpend = zone.minSpend * tableCount;
+    const totalMinSpend = baseMinSpend + (this.reservation.extraTable ? zone.extraTableCost : 0);
 
     container.innerHTML = `
       <div class="extra-table-container animate-fade">
@@ -53,8 +57,8 @@ export default class ExtraTable {
             <h3 class="font-heading" style="margin-bottom: var(--spacing-xl); font-size: 1.5rem; color: var(--text-main);">สรุปรายการจอง</h3>
             <div style="display: flex; flex-direction: column; gap: var(--spacing-md); margin-bottom: var(--spacing-xl);">
               <div style="display: flex; justify-content: space-between; align-items: center;">
-                <span style="color: var(--text-dim); font-weight: 500;">โซน ${zone.name} (${zone.code})</span>
-                <span style="font-weight: 700;">฿${zone.minSpend.toLocaleString()}</span>
+                <span style="color: var(--text-dim); font-weight: 500;">โซน ${zone.name} (${zone.code})${tableCount > 1 ? ` × ${tableCount} โต๊ะ` : ''}</span>
+                <span style="font-weight: 700;">฿${baseMinSpend.toLocaleString()}</span>
               </div>
               <div id="summary-extra" style="display: ${this.reservation.extraTable ? 'flex' : 'none'}; justify-content: space-between; align-items: center; color: var(--accent-neon);">
                 <span style="font-weight: 500;">เพิ่มโต๊ะเสริม (1 ตัว)</span>
@@ -92,9 +96,11 @@ export default class ExtraTable {
     const totalPriceDisplay = container.querySelector('#total-price-display');
     const { zone } = this.reservation;
 
+    const tableCount = this.reservation.tableCount || this.reservation.tableIds?.length || 1;
+
     toggle.addEventListener('change', (e) => {
       this.reservation.extraTable = e.target.checked;
-      const total = zone.minSpend + (this.reservation.extraTable ? zone.extraTableCost : 0);
+      const total = zone.minSpend * tableCount + (this.reservation.extraTable ? zone.extraTableCost : 0);
 
       summaryExtra.style.display = this.reservation.extraTable ? 'flex' : 'none';
       totalPriceDisplay.textContent = `฿${total.toLocaleString()}`;

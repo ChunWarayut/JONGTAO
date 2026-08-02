@@ -279,7 +279,14 @@ async function main() {
   console.log(`Inserting ${bookings.length} sample bookings...`)
 
   for (const booking of bookings) {
-    await prisma.booking.create({ data: booking })
+    // Availability reads BookingTable, so seeded bookings need the join row too —
+    // without it the seeded tables would still look free on the map.
+    await prisma.booking.create({
+      data: {
+        ...booking,
+        tables: booking.tableId ? { create: [{ tableId: booking.tableId }] } : undefined,
+      },
+    })
   }
 
   console.log(`Done! ${bookings.length} bookings created.`)

@@ -32,6 +32,14 @@ export const withWriteRetry = async (fn, attempts = 5) => {
     throw lastError
 }
 
+// A booking may span several tables. Clients send `tableIds`; older callers (and the
+// pre-multi-table client) send a single `tableId`. Normalise both into a deduped array.
+export const normaliseTableIds = (tableIds, tableId) => {
+    const raw = Array.isArray(tableIds) && tableIds.length ? tableIds : (tableId ? [tableId] : [])
+    const parsed = raw.map((id) => parseInt(id)).filter((id) => Number.isInteger(id))
+    return [...new Set(parsed)]
+}
+
 export const getBkkDayRange = (date) => {
     const bkkStr = (date || new Date()).toLocaleString('en-US', { timeZone: 'Asia/Bangkok' })
     const bkkDate = new Date(bkkStr)
@@ -72,7 +80,7 @@ export const notifyClients = (eventType = 'update', payload = {}) => {
 
 export const createBooking = async (req, res) => {
     const {
-        zoneId, tableId, guestCount, extraTable, totalAmount, depositAmount,
+        zoneId, tableId, tableIds, guestCount, extraTable, totalAmount, depositAmount,
         customerName, customerPhone, lineId, arrivalTime, occasion, note,
         bookingDate, sessionId, idempotencyKey
     } = req.body
@@ -89,7 +97,7 @@ export const createBooking = async (req, res) => {
         // Generate simple QR code string (could be a unique link)
         const qrCode = crypto.randomBytes(8).toString('hex')
 
-        const parsedTableId = tableId ? parseInt(tableId) : null
+        const parsedTableIds = normaliseTableIds(tableIds, tableId)
         const bookingDateObj = new Date(bookingDate)
 
         // Compute BKK day boundaries for the requested booking date
@@ -101,44 +109,52 @@ export const createBooking = async (req, res) => {
         // requests from both grabbing the same table on the same date (the double-booking bug).
         // Wrapped in a retry loop to ride out transient SQLITE_BUSY / write-conflict errors.
         const booking = await withWriteRetry(() => prisma.$transaction(async (tx) => {
-            if (parsedTableId) {
-                // Fetch active bookings for this table and filter the date in memory to bypass
-                // SQLite/Prisma DateTime inconsistencies (same approach as getPublicBookings).
-                const existingForTable = await tx.booking.findMany({
-                    where: {
-                        tableId: parsedTableId,
-                        status: { not: 'cancelled' }
-                    },
-                    select: { id: true, bookingDate: true }
+            if (parsedTableIds.length) {
+                // Every table on every non-cancelled booking, filtered by date in memory to
+                // bypass SQLite/Prisma DateTime inconsistencies (same approach as
+                // getPublicBookings). Reads BookingTable, not Booking.tableId, so a table
+                // that is only a *secondary* table of another booking still counts as taken.
+                const existingForTables = await tx.bookingTable.findMany({
+                    where: { tableId: { in: parsedTableIds } },
+                    select: {
+                        tableId: true,
+                        booking: { select: { status: true, bookingDate: true } }
+                    }
                 })
 
-                const clash = existingForTable.some((b) => {
+                const clashed = existingForTables.filter(({ booking: b }) => {
+                    if (!b || b.status === 'cancelled') return false
                     const bDate = new Date(b.bookingDate)
                     return bDate >= startOfDayBKK && bDate < startOfTomorrowBKK
                 })
 
-                if (clash) {
+                if (clashed.length) {
                     const err = new Error('TABLE_ALREADY_BOOKED')
                     err.code = 'TABLE_ALREADY_BOOKED'
                     throw err
                 }
 
                 // Enforce the hold timer: the customer must still own a non-expired hold on
-                // this table for this date. If it lapsed (didn't pay in time) the table was
-                // released, so the booking is rejected and they must pick again.
+                // *every* table they are booking. If any lapsed (didn't pay in time) that
+                // table was released, so the booking is rejected and they must pick again.
                 if (sessionId) {
                     // Compare expiry in memory — DateTime WHERE filters are unreliable on
                     // this SQLite/Prisma setup (see getPublicBookings' in-memory date filter).
                     const nowMs = Date.now()
                     const myHolds = await tx.tableHold.findMany({
-                        where: { tableId: parsedTableId, sessionId },
-                        select: { bookingDate: true, expiresAt: true }
+                        where: { tableId: { in: parsedTableIds }, sessionId },
+                        select: { tableId: true, bookingDate: true, expiresAt: true }
                     })
-                    const hasValidHold = myHolds.some((h) => {
-                        const d = new Date(h.bookingDate)
-                        return new Date(h.expiresAt).getTime() > nowMs && d >= startOfDayBKK && d < startOfTomorrowBKK
-                    })
-                    if (!hasValidHold) {
+                    const heldIds = new Set(
+                        myHolds
+                            .filter((h) => {
+                                const d = new Date(h.bookingDate)
+                                return new Date(h.expiresAt).getTime() > nowMs &&
+                                    d >= startOfDayBKK && d < startOfTomorrowBKK
+                            })
+                            .map((h) => h.tableId)
+                    )
+                    if (parsedTableIds.some((id) => !heldIds.has(id))) {
                         const err = new Error('HOLD_EXPIRED')
                         err.code = 'HOLD_EXPIRED'
                         throw err
@@ -149,7 +165,12 @@ export const createBooking = async (req, res) => {
             const created = await tx.booking.create({
                 data: {
                     zoneId: parseInt(zoneId),
-                    tableId: parsedTableId,
+                    // tables is the authoritative set; tableId mirrors the first one so the
+                    // scanner and other single-table read paths keep working.
+                    tableId: parsedTableIds[0] ?? null,
+                    tables: parsedTableIds.length
+                        ? { create: parsedTableIds.map((id) => ({ tableId: id })) }
+                        : undefined,
                     guestCount: parseInt(guestCount),
                     extraTable: !!extraTable,
                     totalAmount: parseFloat(totalAmount),
@@ -166,10 +187,11 @@ export const createBooking = async (req, res) => {
                     status: 'pending',
                     paymentMethod: req.body.paymentMethod || 'promptpay',
                     paymentStatus: 'unpaid'
-                }
+                },
+                include: { tables: { include: { table: true } } }
             })
 
-            // Hold has served its purpose — release it now that the booking exists.
+            // Holds have served their purpose — release them now that the booking exists.
             if (sessionId) {
                 await tx.tableHold.deleteMany({ where: { sessionId } })
             }
@@ -180,6 +202,9 @@ export const createBooking = async (req, res) => {
         // Let the map free up the (now booked) table for everyone watching live.
         notifyClients('holds_update', {})
 
+        const tableNumbers = (booking.tables || []).map((bt) => bt.table?.number).filter(Boolean)
+        const tableSummary = tableNumbers.length ? ` (โต๊ะ ${tableNumbers.join(', ')})` : ''
+
         // Notify SSE clients
         notifyClients('new_booking', {
             booking: {
@@ -188,6 +213,7 @@ export const createBooking = async (req, res) => {
                 customerPhone,
                 guestCount: parseInt(guestCount),
                 zoneId: parseInt(zoneId),
+                tableNumbers,
                 arrivalTime,
                 bookingDate
             }
@@ -196,7 +222,7 @@ export const createBooking = async (req, res) => {
         // ส่ง Web Push ไปยัง admin ที่ subscribe ไว้ (ทำงานแม้ปิดเบราว์เซอร์)
         sendPushToAll({
             title: 'การจองใหม่เข้ามา!',
-            body: `${customerName} - ${parseInt(guestCount)} ท่าน`,
+            body: `${customerName} - ${parseInt(guestCount)} ท่าน${tableSummary}`,
             type: 'booking',
             tag: `booking-${booking.id}`,
             url: '/admin',
@@ -224,7 +250,7 @@ export const createBooking = async (req, res) => {
 export const getAllBookings = async (req, res) => {
     try {
         const bookings = await prisma.booking.findMany({
-            include: { zone: true, table: true },
+            include: { zone: true, table: true, tables: { include: { table: true } } },
             orderBy: { bookingDate: 'desc' }
         })
         res.json(bookings)
@@ -252,15 +278,20 @@ export const getPublicBookings = async (req, res) => {
                 id: true,
                 tableId: true,
                 bookingDate: true,
-                status: true
+                status: true,
+                tables: { select: { tableId: true } }
             }
         });
 
         // Filter bookings that fall within the specified date boundary
-        const bookings = allBookings.filter(b => {
-            const bDate = new Date(b.bookingDate);
-            return bDate >= startOfDayBKK && bDate < startOfTomorrowBKK;
-        });
+        const bookings = allBookings
+            .filter(b => {
+                const bDate = new Date(b.bookingDate);
+                return bDate >= startOfDayBKK && bDate < startOfTomorrowBKK;
+            })
+            // The map greys out every table on the booking, so expose the whole set.
+            // tableId stays for older clients that only understand one table.
+            .map(({ tables, ...b }) => ({ ...b, tableIds: tables.map(t => t.tableId) }));
 
         res.json(bookings);
     } catch (error) {
@@ -275,7 +306,7 @@ export const getBookingById = async (req, res) => {
     try {
         const booking = await prisma.booking.findUnique({
             where: { id },
-            include: { zone: true }
+            include: { zone: true, table: true, tables: { include: { table: true } } }
         })
         if (!booking) return res.status(404).json({ error: 'Booking not found' })
         res.json(booking)
@@ -313,6 +344,25 @@ export const cancelBooking = async (req, res) => {
     }
 }
 
+// Hard delete, as opposed to cancelBooking's soft "status = cancelled".
+// Owners need this for junk rows — someone tapping through the flow for fun leaves a
+// pending booking that clutters the nightly report. Removing the row also frees the
+// table, since availability only looks at non-cancelled bookings.
+export const deleteBooking = async (req, res) => {
+    const id = parseInt(req.params.id)
+    if (isNaN(id)) return res.status(400).json({ error: 'Invalid booking ID' })
+    try {
+        await prisma.booking.delete({ where: { id } })
+        notifyClients('booking_deleted', { bookingId: id })
+        notifyClients('holds_update', {})
+        res.json({ success: true, id })
+    } catch (error) {
+        if (error.code === 'P2025') return res.status(404).json({ error: 'Booking not found' })
+        console.error('Delete booking error:', error)
+        res.status(400).json({ error: 'Could not delete booking' })
+    }
+}
+
 export const getBookingByQR = async (req, res) => {
     try {
         const { qrCode } = req.params
@@ -321,7 +371,8 @@ export const getBookingByQR = async (req, res) => {
             where: { qrCode },
             include: {
                 zone: true,
-                table: true
+                table: true,
+                tables: { include: { table: true } }
             }
         })
 

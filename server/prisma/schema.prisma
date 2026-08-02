@@ -29,15 +29,16 @@ model Zone {
 }
 
 model Table {
-  id       Int         @id @default(autoincrement())
-  number   String      @unique
-  x        Float       @default(0)
-  y        Float       @default(0)
-  status   String      @default("active")
-  zoneId   Int
-  bookings Booking[]
-  holds    TableHold[]
-  zone     Zone        @relation(fields: [zoneId], references: [id])
+  id            Int            @id @default(autoincrement())
+  number        String         @unique
+  x             Float          @default(0)
+  y             Float          @default(0)
+  status        String         @default("active")
+  zoneId        Int
+  bookings      Booking[]
+  bookingTables BookingTable[]
+  holds         TableHold[]
+  zone          Zone           @relation(fields: [zoneId], references: [id])
 }
 
 // Temporary hold placed on a table the moment a customer selects it, so no one
@@ -82,6 +83,22 @@ model Booking {
   updatedAt        DateTime @updatedAt
   table            Table?   @relation(fields: [tableId], references: [id])
   zone             Zone     @relation(fields: [zoneId], references: [id])
+  tables           BookingTable[]
+}
+
+// Every table on a booking. A reservation can span several tables, so `tables` is the
+// authoritative set — availability checks must read it, never Booking.tableId alone.
+// Booking.tableId is kept as the primary (first) table purely so older read paths and
+// the QR scanner keep showing something sensible; it is always tables[0].
+model BookingTable {
+  id        Int     @id @default(autoincrement())
+  bookingId Int
+  tableId   Int
+  booking   Booking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  table     Table   @relation(fields: [tableId], references: [id])
+
+  @@unique([bookingId, tableId])
+  @@index([tableId])
 }
 
 model AppConfig {

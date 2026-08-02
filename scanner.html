@@ -474,11 +474,17 @@
               <span class="label">โซน</span>
               <span class="value" style="color: ${booking.zone.color};">${booking.zone.name}</span>
             </div>
-            ${booking.table ? `
+            ${(() => {
+              // A booking may cover several tables; `table` is only the first one.
+              const nums = (booking.tables || []).map(bt => bt.table && bt.table.number).filter(Boolean);
+              const all = nums.length ? nums : (booking.table ? [booking.table.number] : []);
+              if (!all.length) return '';
+              return `
             <div class="detail-row">
-              <span class="label">โต๊ะ</span>
-              <span class="value">โต๊ะ ${booking.table.number}</span>
-            </div>` : ''}
+              <span class="label">โต๊ะ${all.length > 1 ? ` (${all.length} โต๊ะ)` : ''}</span>
+              <span class="value" style="text-align: right; max-width: 60%;">โต๊ะ ${all.join(', ')}</span>
+            </div>`;
+            })()}
             <div class="detail-row">
               <span class="label">จำนวนคน</span>
               <span class="value">${booking.guestCount} คน</span>

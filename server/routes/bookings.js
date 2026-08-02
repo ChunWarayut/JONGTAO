@@ -11,6 +11,7 @@ router.get('/public-status', bookingController.getPublicBookings)
 router.get('/qr/:qrCode', bookingController.getBookingByQR)
 router.get('/:id', bookingController.getBookingById)
 router.patch('/:id/status', authenticate, bookingController.updateBookingStatus)
+router.delete('/:id/permanent', authenticate, bookingController.deleteBooking)
 router.delete('/:id', authenticate, bookingController.cancelBooking)
 
 export default router

@@ -29,11 +29,24 @@ class App {
     getDefaultReservation() {
         return {
             zone: null,
+            tables: [],
+            tableIds: [],
             guestCount: 3,
             extraTable: false,
             customer: {},
             payment: {}
         };
+    }
+
+    // Wipe the chosen tables (both the multi-table set and the legacy single-table
+    // mirrors) — used whenever the customer has to go back to the map and pick again.
+    clearSelectedTables() {
+        if (!this.reservation) return;
+        this.reservation.tables = [];
+        this.reservation.tableIds = [];
+        this.reservation.tableCount = 0;
+        this.reservation.table = null;
+        this.reservation.tableId = null;
     }
 
     attachGlobalEvents() {
@@ -62,11 +75,13 @@ class App {
     // (cleanup job) and here we drop them back to the map.
 
     async releaseHold() {
-        if (!this.reservation || !this.reservation.tableId) return;
+        const held = this.reservation?.tableIds?.length || this.reservation?.tableId;
+        if (!held) return;
         try {
+            // No tableId in the body — releases every table this session is holding.
             await client.delete('/holds', {
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ sessionId: this.sessionId, tableId: this.reservation.tableId })
+                body: JSON.stringify({ sessionId: this.sessionId })
             });
         } catch (e) {
             console.error('Failed to release hold', e);
@@ -96,10 +111,7 @@ class App {
     async onHoldExpired() {
         this.stopHoldTimer();
         await this.releaseHold();
-        if (this.reservation) {
-            this.reservation.table = null;
-            this.reservation.tableId = null;
-        }
+        this.clearSelectedTables();
         this.saveToStorage();
         await showAlert('⏰ หมดเวลาในการจอง ระบบได้คืนโต๊ะให้ลูกค้าท่านอื่นแล้ว กรุณาเลือกโต๊ะใหม่อีกครั้ง');
         this.goToStep(1);
@@ -393,6 +405,7 @@ class App {
 
             const payload = {
                 zoneId: this.reservation.zone.id,
+                tableIds: this.reservation.tableIds,
                 tableId: this.reservation.tableId,
                 idempotencyKey: this.reservation.idempotencyKey,
                 guestCount: this.reservation.guestCount,
@@ -434,8 +447,7 @@ class App {
             // Hold expired (didn't pay in time) — table was released.
             if (msg.includes('หมดเวลา')) {
                 this.stopHoldTimer();
-                this.reservation.table = null;
-                this.reservation.tableId = null;
+                this.clearSelectedTables();
                 this.reservation.idempotencyKey = null;
                 await showAlert(msg);
                 this.goToStep(1);
@@ -447,8 +459,7 @@ class App {
                 this.stopHoldTimer();
                 this.reservation.idempotencyKey = null;
                 await showAlert(msg);
-                this.reservation.table = null;
-                this.reservation.tableId = null;
+                this.clearSelectedTables();
                 this.goToStep(1);
                 return;
             }
