@@ -44,7 +44,8 @@ describe('AllZonesTableMap multi-table selection', () => {
     };
 
     const tableEl = (id) => container.querySelector(`.table-map-item[data-id="${id}"]`);
-    const bar = () => container.querySelector('#selection-bar');
+    // The cart floats on <body>, outside the step container.
+    const cart = () => document.querySelector('#selection-cart');
 
     beforeEach(() => {
         // Containers from earlier tests must go: jsdom resolves `#id` through the
@@ -83,7 +84,7 @@ describe('AllZonesTableMap multi-table selection', () => {
         await vi.waitFor(() => expect(map.selectedTableIds).toEqual([1, 2, 3]));
 
         expect(mockClient.post).toHaveBeenCalledTimes(3);
-        expect(bar().textContent).toContain('เลือกแล้ว 3 โต๊ะ');
+        expect(cart().textContent).toContain('3 โต๊ะ');
     });
 
     it('tapping a selected table again releases just that hold', async () => {
@@ -131,8 +132,8 @@ describe('AllZonesTableMap multi-table selection', () => {
         tableEl(2).click();
         await vi.waitFor(() => expect(map.selectedTableIds).toEqual([1, 2]));
         expect(map.selectionPricing()).toMatchObject({ total: 4000, free: false });
-        expect(bar().textContent).toContain('฿4,000');
-        expect(bar().textContent).toContain('8 ที่นั่ง');
+        expect(cart().textContent).toContain('฿4,000');
+        expect(cart().textContent).toContain('8 ที่นั่ง');
     });
 
     it('multiplies a custom event price by the number of tables', async () => {
@@ -155,7 +156,7 @@ describe('AllZonesTableMap multi-table selection', () => {
         await vi.waitFor(() => expect(map.selectedTableIds).toEqual([1]));
 
         expect(map.selectionPricing().free).toBe(true);
-        expect(bar().textContent).toContain('จองฟรี');
+        expect(cart().textContent).toContain('จองฟรี');
     });
 
     it('confirming writes the whole table set onto the reservation', async () => {
@@ -167,7 +168,7 @@ describe('AllZonesTableMap multi-table selection', () => {
         tableEl(3).click();
         await vi.waitFor(() => expect(map.selectedTableIds).toEqual([1, 3]));
 
-        bar().querySelector('#btn-confirm-selection').click();
+        cart().querySelector('#btn-confirm-selection').click();
 
         expect(reservation.tableIds).toEqual([1, 3]);
         expect(reservation.tables.map((t) => t.number)).toEqual(['A1', 'A3']);
@@ -204,7 +205,7 @@ describe('AllZonesTableMap multi-table selection', () => {
 
         expect(tableEl(1).classList.contains('mine')).toBe(true);
         expect(tableEl(2).classList.contains('mine')).toBe(true);
-        expect(bar().textContent).toContain('เลือกแล้ว 2 โต๊ะ');
+        expect(cart().textContent).toContain('2 โต๊ะ');
     });
 
     // Placing a hold makes the server broadcast holds_update, which comes straight
@@ -223,7 +224,7 @@ describe('AllZonesTableMap multi-table selection', () => {
 
         tableEl(2).click();
         await vi.waitFor(() => expect(map.selectedTableIds).toEqual([1, 2]));
-        expect(bar().textContent).toContain('เลือกแล้ว 2 โต๊ะ');
+        expect(cart().textContent).toContain('2 โต๊ะ');
     });
 
     it('survives a re-render that lands mid-tap', async () => {
@@ -235,6 +236,32 @@ describe('AllZonesTableMap multi-table selection', () => {
 
         tableEl(2).click();
         await vi.waitFor(() => expect(map.selectedTableIds).toEqual([1, 2]));
+    });
+
+    it('shows no cart until something is selected, and drops it when emptied', async () => {
+        const map = setup();
+        await map.render(container);
+        expect(cart()).toBeNull();
+        expect(document.body.classList.contains('has-selection-cart')).toBe(false);
+
+        tableEl(1).click();
+        await vi.waitFor(() => expect(cart()).not.toBeNull());
+        expect(document.body.classList.contains('has-selection-cart')).toBe(true);
+
+        tableEl(1).click();
+        await vi.waitFor(() => expect(map.selectedTableIds).toEqual([]));
+        expect(cart()).toBeNull();
+        expect(document.body.classList.contains('has-selection-cart')).toBe(false);
+    });
+
+    it('floats outside the step container so it cannot scroll away', async () => {
+        const map = setup();
+        await map.render(container);
+        tableEl(1).click();
+        await vi.waitFor(() => expect(cart()).not.toBeNull());
+
+        expect(cart().parentElement).toBe(document.body);
+        expect(container.contains(cart())).toBe(false);
     });
 
     it('keeps the table unselected when the hold is rejected', async () => {
