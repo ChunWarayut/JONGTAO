@@ -236,8 +236,6 @@ export default class AllZonesTableMap {
           <p style="color: var(--accent-neon); font-size: 0.85rem; font-weight: 600; margin-bottom: 4px; display: flex; align-items: center; justify-content: center; gap: 6px;"><i data-lucide="lightbulb" style="width: 16px; height: 16px;"></i> คำแนะนำ</p>
           <p style="color: var(--text-dim); font-size: 0.75rem;">แตะโต๊ะที่ต้องการเพื่อเลือก — เลือกได้มากกว่า 1 โต๊ะ (ต้องอยู่โซนเดียวกัน) • แตะซ้ำเพื่อเอาออก • โต๊ะสีเขียวคือโต๊ะที่คุณเลือกไว้ • โต๊ะสีเทาถูกจองแล้ว • โต๊ะสีเหลืองกำลังถูกเลือกโดยลูกค้าท่านอื่น • ใช้ปุ่ม +/− เพื่อซูม</p>
         </div>
-
-        <div id="selection-bar"></div>
       </div>
 
       <style>
@@ -354,72 +352,8 @@ export default class AllZonesTableMap {
         }
         .table-map-item { position: absolute; }
 
-        /* Selection summary */
-        .selection-bar {
-          position: sticky;
-          bottom: 0;
-          margin-top: var(--spacing-md);
-          padding: var(--spacing-lg);
-          background: var(--bg-surface);
-          border: 2px solid var(--success);
-          border-radius: var(--radius-lg);
-          box-shadow: 0 -8px 30px rgba(0,0,0,0.6);
-          z-index: 50;
-        }
-        .selection-bar.empty {
-          border-color: var(--glass-border);
-          text-align: center;
-          color: var(--text-dim);
-          font-size: 0.9rem;
-          padding: var(--spacing-md);
-        }
-        .selection-chips {
-          display: flex;
-          flex-wrap: wrap;
-          gap: 8px;
-          margin-bottom: var(--spacing-md);
-        }
-        .selection-chip {
-          display: inline-flex;
-          align-items: center;
-          gap: 6px;
-          padding: 6px 10px 6px 12px;
-          border-radius: var(--radius-full);
-          background: rgba(16, 185, 129, 0.15);
-          border: 1px solid rgba(16, 185, 129, 0.5);
-          color: white;
-          font-family: 'Outfit', sans-serif;
-          font-weight: 700;
-          font-size: 0.9rem;
-        }
-        .selection-chip button {
-          background: rgba(255,255,255,0.15);
-          border: none;
-          color: white;
-          width: 18px;
-          height: 18px;
-          border-radius: 50%;
-          cursor: pointer;
-          font-size: 0.8rem;
-          line-height: 1;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          font-family: inherit;
-        }
-        .selection-chip button:hover { background: var(--danger); }
-        .selection-totals {
-          display: flex;
-          flex-wrap: wrap;
-          gap: var(--spacing-md);
-          justify-content: space-between;
-          align-items: center;
-          padding-top: var(--spacing-sm);
-          border-top: 1px solid rgba(255,255,255,0.08);
-          margin-bottom: var(--spacing-md);
-        }
-        .selection-totals .lbl { color: var(--text-dim); font-size: 0.8rem; }
-        .selection-totals .val { font-family: 'Outfit', sans-serif; font-weight: 800; font-size: 1.15rem; color: white; }
+        /* Selection cart styles live in <head> — see ensureCartStyles() — because the
+           cart itself is mounted on <body>, outside this container. */
 
         /* Mobile responsive - scale to fit like desktop */
         @media (max-width: 820px) {
@@ -773,62 +707,200 @@ export default class AllZonesTableMap {
     return { total: perTable * count, free: false, perTable };
   }
 
+  // The cart is mounted on <body>, not inside the step container: #step-content
+  // keeps `transform: translateY(0)` from its entry animation (fill-mode forwards),
+  // and any transform other than `none` makes that element the containing block for
+  // `position: fixed` descendants — the bar would scroll away instead of floating.
+  // Styles go in <head> for the same reason, so they outlive the container's markup.
+  ensureCartStyles() {
+    if (document.querySelector('#selection-cart-styles')) return;
+    const style = document.createElement('style');
+    style.id = 'selection-cart-styles';
+    style.textContent = `
+      .selection-cart {
+        position: fixed;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        z-index: 900;
+        background: rgba(14, 10, 10, 0.96);
+        backdrop-filter: blur(14px);
+        border-top: 2px solid var(--success);
+        box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.7);
+        padding: 12px 16px calc(12px + env(safe-area-inset-bottom, 0px));
+        animation: cartSlideUp 0.28s cubic-bezier(0.17, 0.84, 0.44, 1);
+      }
+      @keyframes cartSlideUp {
+        from { transform: translateY(110%); }
+        to   { transform: translateY(0); }
+      }
+      .selection-cart .cart-inner {
+        max-width: 1100px;
+        margin: 0 auto;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+      .selection-cart .cart-chips {
+        display: flex;
+        gap: 8px;
+        overflow-x: auto;
+        padding-bottom: 2px;
+        scrollbar-width: thin;
+      }
+      .selection-cart .cart-chips::-webkit-scrollbar { height: 4px; }
+      .selection-cart .cart-chips::-webkit-scrollbar-thumb {
+        background: rgba(255,255,255,0.2); border-radius: 2px;
+      }
+      .selection-cart .cart-chip {
+        flex: 0 0 auto;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 5px 8px 5px 12px;
+        border-radius: 999px;
+        background: rgba(16, 185, 129, 0.18);
+        border: 1px solid rgba(16, 185, 129, 0.55);
+        color: #fff;
+        font-family: 'Outfit', sans-serif;
+        font-weight: 700;
+        font-size: 0.9rem;
+        white-space: nowrap;
+      }
+      .selection-cart .cart-chip button {
+        background: rgba(255,255,255,0.16);
+        border: none;
+        color: #fff;
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        cursor: pointer;
+        font-size: 0.85rem;
+        line-height: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-family: inherit;
+        padding: 0;
+      }
+      .selection-cart .cart-chip button:hover { background: var(--danger); }
+      .selection-cart .cart-row {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+      .selection-cart .cart-summary { flex: 1; min-width: 0; }
+      .selection-cart .cart-meta {
+        font-size: 0.78rem;
+        color: rgba(255,255,255,0.55);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .selection-cart .cart-total {
+        font-family: 'Outfit', sans-serif;
+        font-weight: 800;
+        font-size: 1.35rem;
+        color: #fff;
+        line-height: 1.2;
+      }
+      .selection-cart .cart-total.free { color: var(--success); font-size: 1.1rem; }
+      .selection-cart .btn-cart-clear {
+        flex: 0 0 auto;
+        padding: 0 16px;
+        height: 48px;
+        border-radius: 12px;
+        border: 1px solid rgba(255,255,255,0.18);
+        background: rgba(255,255,255,0.06);
+        color: rgba(255,255,255,0.75);
+        font-family: inherit;
+        font-size: 0.9rem;
+        cursor: pointer;
+      }
+      .selection-cart .btn-cart-clear:hover { background: rgba(255,255,255,0.12); color: #fff; }
+      .selection-cart .btn-cart-confirm {
+        flex: 0 0 auto;
+        min-width: 190px;
+        height: 48px;
+        border-radius: 12px;
+        border: none;
+        background: linear-gradient(135deg, var(--success), #059669);
+        color: #fff;
+        font-family: inherit;
+        font-size: 1.02rem;
+        font-weight: 800;
+        cursor: pointer;
+        box-shadow: 0 6px 20px rgba(16, 185, 129, 0.35);
+      }
+      .selection-cart .btn-cart-confirm:active { transform: scale(0.985); }
+
+      /* Keep the page's own content clear of the floating bar. */
+      body.has-selection-cart { padding-bottom: 168px; }
+
+      @media (max-width: 560px) {
+        .selection-cart .btn-cart-confirm { min-width: 0; flex: 1; font-size: 0.95rem; }
+        .selection-cart .cart-total { font-size: 1.2rem; }
+        body.has-selection-cart { padding-bottom: 190px; }
+      }
+    `;
+    document.head.appendChild(style);
+  }
+
+  removeSelectionCart() {
+    document.querySelector('#selection-cart')?.remove();
+    document.body.classList.remove('has-selection-cart');
+  }
+
   renderSelectionBar() {
-    const host = this.container?.querySelector('#selection-bar');
-    if (!host) return;
+    this.ensureCartStyles();
 
     const tables = this.selectedTables();
     const zone = this.currentZone();
 
-    if (!tables.length) {
-      host.innerHTML = `
-        <div class="selection-bar empty">
-          ยังไม่ได้เลือกโต๊ะ — แตะโต๊ะบนผังเพื่อเลือก (เลือกได้มากกว่า 1 โต๊ะ)
-        </div>`;
+    // Nothing chosen yet — like a shopping cart, the bar simply isn't there.
+    if (!tables.length || !zone) {
+      this.removeSelectionCart();
       return;
     }
 
     const price = this.selectionPricing();
-    const seats = zone ? zone.seatsPerTable * tables.length : 0;
+    const seats = zone.seatsPerTable * tables.length;
 
-    host.innerHTML = `
-      <div class="selection-bar">
-        <div style="display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: var(--spacing-sm);">
-          <strong style="color: var(--success); font-size: 1rem;">เลือกแล้ว ${tables.length} โต๊ะ</strong>
-          <span style="color: var(--text-dim); font-size: 0.85rem;">โซน ${zone ? zone.name : '-'}</span>
-        </div>
+    let cart = document.querySelector('#selection-cart');
+    if (!cart) {
+      cart = document.createElement('div');
+      cart.id = 'selection-cart';
+      cart.className = 'selection-cart';
+      document.body.appendChild(cart);
+      document.body.classList.add('has-selection-cart');
+    }
 
-        <div class="selection-chips">
+    cart.innerHTML = `
+      <div class="cart-inner">
+        <div class="cart-chips">
           ${tables.map(t => `
-            <span class="selection-chip">
+            <span class="cart-chip">
               ${t.number}
               <button type="button" data-remove="${t.id}" aria-label="เอาโต๊ะ ${t.number} ออก">&times;</button>
             </span>
           `).join('')}
         </div>
-
-        <div class="selection-totals">
-          <div>
-            <div class="lbl">ความจุรวม</div>
-            <div class="val">${seats} ที่นั่ง</div>
-          </div>
-          <div style="text-align: right;">
-            <div class="lbl">${price.free ? 'ค่าจอง' : `ยอดขั้นต่ำรวม (฿${price.perTable.toLocaleString()} × ${tables.length})`}</div>
-            <div class="val" style="color: ${price.free ? 'var(--success)' : 'var(--accent-neon)'};">
+        <div class="cart-row">
+          <div class="cart-summary">
+            <div class="cart-meta">${tables.length} โต๊ะ · ${seats} ที่นั่ง · โซน ${zone.name}</div>
+            <div class="cart-total ${price.free ? 'free' : ''}">
               ${price.free ? '🎉 จองฟรี' : `฿${price.total.toLocaleString()}`}
+              ${price.free ? '' : `<span style="font-size:0.72rem; font-weight:500; color:rgba(255,255,255,0.5);">(฿${price.perTable.toLocaleString()} × ${tables.length})</span>`}
             </div>
           </div>
-        </div>
-
-        <div style="display: flex; gap: 10px;">
-          <button type="button" id="btn-clear-selection" class="btn btn-ghost" style="flex: 0 0 auto; padding: 0 18px; height: 52px;">ล้าง</button>
-          <button type="button" id="btn-confirm-selection" class="btn btn-primary" style="flex: 1; height: 52px; font-size: 1.05rem; font-weight: 700; background: linear-gradient(135deg, var(--success), #059669); border-radius: var(--radius-md);">
-            ยืนยัน ${tables.length} โต๊ะ <span style="margin-left: 6px;">→</span>
+          <button type="button" class="btn-cart-clear" id="btn-clear-selection">ล้าง</button>
+          <button type="button" class="btn-cart-confirm" id="btn-confirm-selection">
+            ยืนยัน ${tables.length} โต๊ะ →
           </button>
         </div>
       </div>`;
 
-    host.querySelectorAll('[data-remove]').forEach(btn => {
+    cart.querySelectorAll('[data-remove]').forEach(btn => {
       btn.addEventListener('click', () => {
         const id = parseInt(btn.getAttribute('data-remove'));
         const table = this.tables.find(t => t.id === id);
@@ -836,14 +908,14 @@ export default class AllZonesTableMap {
       });
     });
 
-    host.querySelector('#btn-clear-selection').addEventListener('click', async () => {
+    cart.querySelector('#btn-clear-selection').addEventListener('click', async () => {
       for (const id of [...this.selectedTableIds]) {
         const table = this.tables.find(t => t.id === id);
         await this.toggleTable(id, table ? table.zoneId : null);
       }
     });
 
-    host.querySelector('#btn-confirm-selection').addEventListener('click', () => this.confirmSelection());
+    cart.querySelector('#btn-confirm-selection').addEventListener('click', () => this.confirmSelection());
   }
 
   confirmSelection() {

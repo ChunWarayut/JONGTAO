@@ -315,6 +315,10 @@ class App {
 
     renderStep(step) {
         this.container.innerHTML = '';
+        // The table-selection cart is mounted on <body>, so clearing the step container
+        // does not remove it. Step 1 re-creates it if tables are still selected.
+        document.querySelector('#selection-cart')?.remove();
+        document.body.classList.remove('has-selection-cart');
         this.currentViewInstance = null;
 
         switch (step) {
