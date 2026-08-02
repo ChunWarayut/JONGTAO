@@ -207,6 +207,36 @@ describe('AllZonesTableMap multi-table selection', () => {
         expect(bar().textContent).toContain('เลือกแล้ว 2 โต๊ะ');
     });
 
+    // Placing a hold makes the server broadcast holds_update, which comes straight
+    // back to this same browser and makes main.js re-render the map. Picking the
+    // next table has to keep working across that.
+    it('can still pick another table after the map re-renders underneath', async () => {
+        const map = setup();
+        await map.render(container);
+
+        tableEl(1).click();
+        await vi.waitFor(() => expect(map.selectedTableIds).toEqual([1]));
+
+        await map.render(container);
+        expect(map.selectedTableIds).toEqual([1]);
+        expect(tableEl(1).classList.contains('mine')).toBe(true);
+
+        tableEl(2).click();
+        await vi.waitFor(() => expect(map.selectedTableIds).toEqual([1, 2]));
+        expect(bar().textContent).toContain('เลือกแล้ว 2 โต๊ะ');
+    });
+
+    it('survives a re-render that lands mid-tap', async () => {
+        const map = setup();
+        await map.render(container);
+
+        await Promise.all([map.toggleTable(1, 1, tableEl(1)), map.render(container)]);
+        expect(map.selectedTableIds).toEqual([1]);
+
+        tableEl(2).click();
+        await vi.waitFor(() => expect(map.selectedTableIds).toEqual([1, 2]));
+    });
+
     it('keeps the table unselected when the hold is rejected', async () => {
         const map = setup();
         await map.render(container);
