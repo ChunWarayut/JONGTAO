@@ -18,6 +18,11 @@ export default class AllZonesTableMap {
     this.mobileScale = 1;
     this.userZoomScale = 1;
     this.selectedDate = this.reservation.bookingDate || this.getTodayDate();
+    this.myHeldTableIds = [];
+    // Restored selections are validated exactly once per map instance. render() also
+    // re-runs on every SSE holds_update, and re-claiming there would let an abandoned
+    // tab renew its expired hold forever (cleanup broadcast → re-render → re-claim).
+    this._restoreValidated = false;
     this.specialDate = null;
     this.sessionId = getSessionId();
   }
@@ -40,6 +45,11 @@ export default class AllZonesTableMap {
     });
   }
 
+  formatThaiDateShort(dateString) {
+    const date = new Date(dateString + 'T00:00:00');
+    return date.toLocaleDateString('th-TH', { weekday: 'short', day: 'numeric', month: 'short' });
+  }
+
   getPriceTypeLabel(priceType, depositAmount) {
     const labels = {
       free: '<span style="background: rgba(16, 185, 129, 0.2); color: var(--success); padding: 6px 12px; border-radius: 12px; font-size: 0.85rem; font-weight: 600; display: inline-flex; align-items: center; gap: 6px;"><i data-lucide="gift" style="width: 14px; height: 14px;"></i> เข้าฟรี - ไม่ต้องจ่ายเงิน</span>',
@@ -57,6 +67,7 @@ export default class AllZonesTableMap {
       this.fixtures = await client.get('/fixtures');
       await this.fetchBookingsForDate(this.selectedDate);
       await this.fetchSpecialDate(this.selectedDate);
+      await this.revalidateRestoredSelection();
     } catch (error) {
       console.error('Failed to fetch data:', error);
     }
@@ -98,10 +109,67 @@ export default class AllZonesTableMap {
       this.heldByOthersTableIds = holds
         .filter(h => h.sessionId !== this.sessionId)
         .map(h => h.tableId);
+      this.myHeldTableIds = holds
+        .filter(h => h.sessionId === this.sessionId)
+        .map(h => h.tableId);
     } catch (error) {
       console.error('Failed to fetch holds:', error);
       this.heldByOthersTableIds = [];
+      this.myHeldTableIds = [];
     }
+  }
+
+  // A selection restored from an earlier visit may reference tables whose holds no
+  // longer exist (lapsed while the tab was closed, or released elsewhere). Re-claim
+  // each one quietly while it is still free; a table that can't be re-claimed leaves
+  // the selection now — far better than the booking failing at the payment step with
+  // a confusing "time's up" long after the customer stopped looking at the map.
+  async revalidateRestoredSelection() {
+    if (this._restoreValidated) return;
+    this._restoreValidated = true;
+    if (!this.selectedTableIds.length) return;
+
+    const held = new Set(this.myHeldTableIds);
+    const lost = [];
+    for (const id of [...this.selectedTableIds]) {
+      if (held.has(id)) continue;
+      const stillFree = !this.bookedTableIds.includes(id) && !this.heldByOthersTableIds.includes(id);
+      if (stillFree) {
+        try {
+          const hold = await client.post('/holds', {
+            tableId: id, bookingDate: this.selectedDate, sessionId: this.sessionId,
+          });
+          this.holdExpiresAt = hold.expiresAt;
+          this.myHeldTableIds.push(id);
+          continue;
+        } catch (error) {
+          // Only a definite conflict (someone claimed it in between) removes the
+          // table. On a network blip or server hiccup keep it selected — the
+          // submit-time hold check is the final judge and now fails gracefully.
+          if (error?.status !== 409) continue;
+        }
+      }
+      lost.push(id);
+      this.selectedTableIds = this.selectedTableIds.filter(x => x !== id);
+    }
+
+    if (!lost.length) return;
+
+    // Keep the reservation honest too, or a submit that skips the map re-render
+    // (browser restore straight into a later step) would still send the stale ids.
+    if (this.reservation.tableIds?.length) {
+      this.reservation.tableIds = this.reservation.tableIds.filter(id => !lost.includes(id));
+      this.reservation.tables = (this.reservation.tables || []).filter(t => !lost.includes(t.id));
+      this.reservation.tableCount = this.reservation.tableIds.length;
+      this.reservation.table = this.reservation.tables[0] || null;
+      this.reservation.tableId = this.reservation.tableIds[0] || null;
+      window.app?.saveToStorage?.();
+    }
+
+    const lostNumbers = lost
+      .map(id => this.tables.find(t => t.id === id)?.number || id)
+      .join(', ');
+    showAlert(`โต๊ะ ${lostNumbers} ถูกจองหรือถูกคืนไปแล้วระหว่างที่ออกจากหน้าเว็บ จึงนำออกจากรายการที่เลือก`);
   }
 
   renderAllZonesMap(container) {
@@ -449,6 +517,8 @@ export default class AllZonesTableMap {
     if (!datePicker) return;
 
     datePicker.addEventListener('change', async (e) => {
+      // Clearing the input fires a change with '' — ignore anything but a real date.
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(e.target.value)) return;
       this.selectedDate = e.target.value;
       this.reservation.bookingDate = this.selectedDate;
 
@@ -887,7 +957,7 @@ export default class AllZonesTableMap {
         </div>
         <div class="cart-row">
           <div class="cart-summary">
-            <div class="cart-meta">${tables.length} โต๊ะ · ${seats} ที่นั่ง · โซน ${zone.name}</div>
+            <div class="cart-meta">${tables.length} โต๊ะ · ${seats} ที่นั่ง · โซน ${zone.name} · 📅 ${this.formatThaiDateShort(this.selectedDate)}</div>
             <div class="cart-total ${price.free ? 'free' : ''}">
               ${price.free ? '🎉 จองฟรี' : `฿${price.total.toLocaleString()}`}
               ${price.free ? '' : `<span style="font-size:0.72rem; font-weight:500; color:rgba(255,255,255,0.5);">(฿${price.perTable.toLocaleString()} × ${tables.length})</span>`}

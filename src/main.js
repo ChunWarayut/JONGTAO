@@ -7,6 +7,7 @@ import Payment from './components/Payment.js';
 import Confirmation from './components/Confirmation.js';
 import client from './api/client.js';
 import { getSessionId } from './utils/session.js';
+import { rememberEventDate, recallEventDate } from './utils/eventDate.js';
 
 class App {
     constructor() {
@@ -202,6 +203,8 @@ class App {
         const urlParams = new URLSearchParams(window.location.search);
         const dateParam = urlParams.get('date');
         if (dateParam && /^\d{4}-\d{2}-\d{2}$/.test(dateParam)) {
+            // Survives Facebook re-opening the page with an fbclid-only URL later.
+            rememberEventDate(dateParam);
             // Only apply if no booking in progress
             if (!this.reservation.id && !this.reservation.zone) {
                 this.reservation.bookingDate = dateParam;
@@ -212,12 +215,24 @@ class App {
             // No date in the current URL. A `lockedDate` here is stale — left in
             // localStorage from a previous event-link (?date=) visit — and would
             // wrongly keep the date picker locked. Always unlock so the user can
-            // choose a date freely. Only forget the date itself when nothing is in
-            // progress (don't wipe an in-progress booking's date).
+            // choose a date freely. Keep the date itself while it is still tonight
+            // or later: Facebook strips the ?date= param on re-entry, and wiping a
+            // live event date here once sent a booking to the wrong night. Only a
+            // date already in the past is truly stale.
             this.reservation.lockedDate = false;
-            if (!this.reservation.id && !this.reservation.zone) {
+            if (!this.reservation.id && !this.reservation.zone &&
+                (!this.reservation.bookingDate || this.reservation.bookingDate < this.todayStr())) {
                 this.reservation.bookingDate = null;
             }
+        }
+
+        // An fbclid without ?date= is Facebook re-opening the page with its own URL
+        // (the event link's ?date= gets stripped). Restore the remembered event night
+        // so the map doesn't silently fall back to today. Plain visits (no fbclid)
+        // are walk-ins and must keep today's default.
+        if (!this.reservation.bookingDate && !this.reservation.id && !this.reservation.zone &&
+            !dateParam && urlParams.has('fbclid')) {
+            this.reservation.bookingDate = recallEventDate(this.todayStr());
         }
 
         this.setupRealtimeFeed();
@@ -226,7 +241,77 @@ class App {
         // Resume an in-progress hold countdown after a reload (or expire it if time's up).
         if (this.reservation.holdExpiresAt && this.currentStep >= 2 && this.currentStep < 6) {
             this.startHoldTimer(this.reservation.holdExpiresAt);
+            // The countdown alone can't tell whether the holds behind it still exist
+            // (they may have been released elsewhere while the page was closed), so
+            // check with the server rather than fail at payment with "time's up".
+            // An already-lapsed countdown is onHoldExpired's job — checking it here
+            // too would stack a second alert on top of the first.
+            if (new Date(this.reservation.holdExpiresAt).getTime() > Date.now()) {
+                this.verifyHeldTables();
+            }
         }
+    }
+
+    todayStr() {
+        const d = new Date();
+        return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    }
+
+    // Drop the given tables from the reservation, keeping the multi-table set and the
+    // legacy single-table mirrors consistent. Returns the numbers of what was dropped.
+    dropTablesFromReservation(droppedIds) {
+        const dropped = new Set(droppedIds);
+        const lostNumbers = (this.reservation.tables || [])
+            .filter((t) => dropped.has(t.id)).map((t) => t.number);
+        this.reservation.tableIds = (this.reservation.tableIds || []).filter((id) => !dropped.has(id));
+        this.reservation.tables = (this.reservation.tables || []).filter((t) => !dropped.has(t.id));
+        this.reservation.tableCount = this.reservation.tableIds.length;
+        this.reservation.table = this.reservation.tables[0] || null;
+        this.reservation.tableId = this.reservation.tableIds[0] || null;
+        return lostNumbers;
+    }
+
+    async verifyHeldTables() {
+        const date = this.reservation?.bookingDate;
+        if (!(this.reservation?.tableIds || []).length || !/^\d{4}-\d{2}-\d{2}$/.test(date || '')) return;
+
+        let holds;
+        try {
+            holds = await client.get(`/holds/public?date=${date}`);
+        } catch {
+            return; // can't verify right now — the server re-checks at submit anyway
+        }
+
+        // The world may have moved on while the request was in flight: the customer
+        // can have submitted (booking done, holds consumed) or gone back to the map
+        // (which revalidates on its own). Only act on a still-live steps-2..5 state.
+        if (this.reservation.id || this.currentStep < 2 || this.currentStep >= 6) return;
+        const ids = this.reservation?.tableIds || [];
+        if (!ids.length) return;
+
+        const mine = new Set(holds.filter((h) => h.sessionId === this.sessionId).map((h) => h.tableId));
+        const lostIds = ids.filter((id) => !mine.has(id));
+        if (!lostIds.length) return;
+
+        const lostNumbers = this.dropTablesFromReservation(lostIds);
+        const lostLabel = lostNumbers.length ? lostNumbers.join(', ') : lostIds.join(', ');
+        const keptNumbers = this.reservation.tables.map((t) => t.number).join(', ');
+        const nothingLeft = !this.reservation.tableIds.length;
+        if (nothingLeft) {
+            this.stopHoldTimer();
+            this.clearSelectedTables();
+        }
+        // Persist the corrected state (including the step) BEFORE the alert: closing
+        // the tab mid-alert must not freeze a payment step with zero tables in it.
+        this.currentStep = 1;
+        this.saveToStorage();
+
+        if (nothingLeft) {
+            await showAlert(`⏰ โต๊ะที่เลือกไว้ (${lostLabel}) ถูกคืนไปแล้วระหว่างที่ออกจากหน้าเว็บ กรุณาเลือกโต๊ะใหม่อีกครั้ง`);
+        } else {
+            await showAlert(`โต๊ะ ${lostLabel} ถูกคืนไปแล้ว เหลือโต๊ะ ${keptNumbers} ในการจองนี้ กรุณากดยืนยันอีกครั้ง`);
+        }
+        this.goToStep(1);
     }
 
     setupRealtimeFeed() {
@@ -386,6 +471,13 @@ class App {
     }
 
     async submitBooking() {
+        // A corrupted or half-cleared reservation must never turn into a paid
+        // booking that reserves nothing.
+        if (!(this.reservation.tableIds || []).length && !this.reservation.tableId) {
+            await showAlert('ยังไม่มีโต๊ะในการจองนี้ กรุณาเลือกโต๊ะก่อนยืนยัน');
+            this.goToStep(1);
+            return;
+        }
         try {
             this.container.innerHTML = `
         <div style="text-align: center; padding: 100px 0;">
@@ -422,7 +514,13 @@ class App {
                 arrivalTime: this.reservation.customer.arrivalTime || '19:00',
                 occasion: this.reservation.customer.occasion,
                 note: this.reservation.customer.note,
-                bookingDate: this.reservation.bookingDate ? new Date(this.reservation.bookingDate + 'T00:00:00').toISOString() : new Date().toISOString(),
+                // Anchor to Bangkok midnight explicitly. Without the offset the string
+                // parses in the DEVICE's timezone, and any phone set east of UTC+7
+                // lands on the previous Bangkok day — the server then can't match the
+                // holds (stored per BKK day) and rejects with "time's up" every time.
+                bookingDate: /^\d{4}-\d{2}-\d{2}$/.test(this.reservation.bookingDate || '')
+                    ? new Date(this.reservation.bookingDate + 'T00:00:00+07:00').toISOString()
+                    : new Date().toISOString(),
                 paymentMethod: this.reservation.payment.method,
                 sessionId: this.sessionId
             };
@@ -448,11 +546,28 @@ class App {
             this.goToStep(6);
         } catch (error) {
             const msg = error.message || '';
-            // Hold expired (didn't pay in time) — table was released.
-            if (msg.includes('หมดเวลา')) {
+            const code = error.data?.code;
+            // Hold expired — some (or all) of the selected tables were released.
+            if (code === 'HOLD_EXPIRED' || msg.includes('หมดเวลา')) {
+                this.reservation.idempotencyKey = null;
+                const missing = error.data?.missingTableIds || [];
+                const stillHeld = (this.reservation.tableIds || []).filter((id) => !missing.includes(id));
+
+                if (missing.length && stillHeld.length) {
+                    // Only part of the selection lapsed (e.g. a stale table restored
+                    // from an old visit). Keep the live tables and their countdown —
+                    // the customer just re-confirms instead of starting from zero.
+                    const lostNumbers = this.dropTablesFromReservation(missing);
+                    const lostLabel = lostNumbers.length ? lostNumbers.join(', ') : missing.join(', ');
+                    const keptNumbers = this.reservation.tables.map((t) => t.number).join(', ');
+                    this.saveToStorage();
+                    await showAlert(`โต๊ะ ${lostLabel} ถูกคืนไปแล้ว เหลือโต๊ะ ${keptNumbers} ในการจองนี้ กรุณากดยืนยันอีกครั้ง`);
+                    this.goToStep(1);
+                    return;
+                }
+
                 this.stopHoldTimer();
                 this.clearSelectedTables();
-                this.reservation.idempotencyKey = null;
                 await showAlert(msg);
                 this.goToStep(1);
                 return;

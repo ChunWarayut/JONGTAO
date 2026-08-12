@@ -43,6 +43,16 @@ class AdminApp {
         this.loginScreen.style.display = 'flex';
         this.dashboardLayout.style.display = 'none';
         localStorage.removeItem('token');
+        // Stop background refreshes: a live SSE feed + pending debounce timer would
+        // keep hammering token-less requests behind the login screen.
+        if (this._refreshTimer) {
+            clearTimeout(this._refreshTimer);
+            this._refreshTimer = null;
+        }
+        if (this.sseSource) {
+            this.sseSource.close();
+            this.sseSource = null;
+        }
     }
 
     showDashboard(user) {
@@ -220,6 +230,21 @@ class AdminApp {
         });
     }
 
+    // holds_update arrives for every table any customer taps anywhere, so on a busy
+    // night SSE events come in bursts. Collapse each burst into one refresh, and pass
+    // isSoftRefresh=true — repainting the loading spinner over live content on every
+    // event is what made the dashboard look permanently stuck loading.
+    scheduleViewRefresh() {
+        if (this._refreshTimer) return;
+        this._refreshTimer = setTimeout(async () => {
+            this._refreshTimer = null;
+            if (this.currentViewId !== 'dashboard' && this.currentViewId !== 'bookings') return;
+            if (this.currentViewInstance && typeof this.currentViewInstance.render === 'function') {
+                await this.currentViewInstance.render(this.viewContent, true);
+            }
+        }, 1500);
+    }
+
     setupRealtimeFeed() {
         if (this.sseSource) this.sseSource.close();
         this.sseSource = new EventSource('/api/bookings/stream');
@@ -267,11 +292,7 @@ class AdminApp {
             }
 
             // Soft refresh the current view if it is bookings or dashboard
-            if (this.currentViewId === 'dashboard' || this.currentViewId === 'bookings') {
-                if (this.currentViewInstance && typeof this.currentViewInstance.render === 'function') {
-                    await this.currentViewInstance.render(this.viewContent, false);
-                }
-            }
+            this.scheduleViewRefresh();
         };
 
         this.sseSource.onerror = () => {

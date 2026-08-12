@@ -264,6 +264,88 @@ describe('AllZonesTableMap multi-table selection', () => {
         expect(container.contains(cart())).toBe(false);
     });
 
+    // ---- restored-selection revalidation -------------------------------------
+    // A selection that comes back from localStorage may reference tables whose
+    // holds no longer exist. The map must re-claim or drop them — never carry a
+    // hold-less table forward to a "time's up" rejection at the payment step.
+
+    it('re-claims holds for a restored selection whose holds lapsed', async () => {
+        const map = setup({ tableIds: [1, 2] });   // no live holds on the server
+        await map.render(container);
+
+        expect(mockClient.post).toHaveBeenCalledWith('/holds', {
+            tableId: 1, bookingDate: '2026-12-25', sessionId: 'test-session',
+        });
+        expect(mockClient.post).toHaveBeenCalledWith('/holds', {
+            tableId: 2, bookingDate: '2026-12-25', sessionId: 'test-session',
+        });
+        expect(map.selectedTableIds).toEqual([1, 2]);
+        expect(mockShowAlert).not.toHaveBeenCalled();
+    });
+
+    it('does not re-claim tables whose own hold is still live', async () => {
+        const map = setup({
+            tableIds: [1],
+            holds: [{ tableId: 1, sessionId: 'test-session', expiresAt: '2026-12-25T12:15:00.000Z' }],
+        });
+        await map.render(container);
+
+        expect(mockClient.post).not.toHaveBeenCalled();
+        expect(map.selectedTableIds).toEqual([1]);
+    });
+
+    it('drops a restored table that was booked while away', async () => {
+        const map = setup({
+            tableIds: [1, 2],
+            publicBookings: [{ id: 9, status: 'confirmed', tableId: 1, tableIds: [1] }],
+        });
+        await map.render(container);
+
+        expect(map.selectedTableIds).toEqual([2]);
+        expect(reservation.tableIds).toEqual([2]);
+        // Only the still-free table gets re-claimed.
+        expect(mockClient.post).toHaveBeenCalledTimes(1);
+        expect(mockClient.post).toHaveBeenCalledWith('/holds', expect.objectContaining({ tableId: 2 }));
+        expect(mockShowAlert).toHaveBeenCalled();
+        expect(mockShowAlert.mock.calls[0][0]).toContain('A1');
+    });
+
+    it('drops a restored table when re-claiming is rejected with a conflict', async () => {
+        const map = setup({ tableIds: [1] });
+        const conflict = new Error('โต๊ะนี้กำลังถูกเลือกโดยลูกค้าท่านอื่น');
+        conflict.status = 409;
+        mockClient.post.mockRejectedValue(conflict);
+        await map.render(container);
+
+        expect(map.selectedTableIds).toEqual([]);
+        expect(reservation.tableIds).toEqual([]);
+        expect(mockShowAlert).toHaveBeenCalled();
+        expect(cart()).toBeNull();
+    });
+
+    it('keeps a restored table when re-claiming fails for a non-conflict reason', async () => {
+        const map = setup({ tableIds: [1] });
+        mockClient.post.mockRejectedValue(new Error('Failed to fetch'));   // network blip
+        await map.render(container);
+
+        // The submit-time hold check is the final judge — don't destroy the
+        // selection over a flaky connection.
+        expect(map.selectedTableIds).toEqual([1]);
+        expect(mockShowAlert).not.toHaveBeenCalled();
+    });
+
+    it('revalidates the restored selection only once per map instance', async () => {
+        const map = setup({ tableIds: [1] });   // no live holds -> re-claims on first render
+        await map.render(container);
+        expect(mockClient.post).toHaveBeenCalledTimes(1);
+
+        // SSE-triggered re-renders of the same instance must NOT re-claim again —
+        // that loop is what let an abandoned tab renew its expired hold forever.
+        await map.render(container);
+        await map.render(container);
+        expect(mockClient.post).toHaveBeenCalledTimes(1);
+    });
+
     it('keeps the table unselected when the hold is rejected', async () => {
         const map = setup();
         await map.render(container);

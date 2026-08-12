@@ -154,9 +154,13 @@ export const createBooking = async (req, res) => {
                             })
                             .map((h) => h.tableId)
                     )
-                    if (parsedTableIds.some((id) => !heldIds.has(id))) {
+                    const missingTableIds = parsedTableIds.filter((id) => !heldIds.has(id))
+                    if (missingTableIds.length) {
                         const err = new Error('HOLD_EXPIRED')
                         err.code = 'HOLD_EXPIRED'
+                        // Which tables lapsed — lets the client keep the still-held ones
+                        // instead of throwing the whole selection away.
+                        err.missingTableIds = missingTableIds
                         throw err
                     }
                 }
@@ -231,10 +235,14 @@ export const createBooking = async (req, res) => {
         res.status(201).json(booking)
     } catch (error) {
         if (error.code === 'TABLE_ALREADY_BOOKED') {
-            return res.status(409).json({ error: 'โต๊ะนี้เพิ่งถูกจองไปแล้ว กรุณาเลือกโต๊ะอื่น' })
+            return res.status(409).json({ error: 'โต๊ะนี้เพิ่งถูกจองไปแล้ว กรุณาเลือกโต๊ะอื่น', code: 'TABLE_ALREADY_BOOKED' })
         }
         if (error.code === 'HOLD_EXPIRED') {
-            return res.status(409).json({ error: 'หมดเวลาในการจองโต๊ะ ระบบได้คืนโต๊ะแล้ว กรุณาเลือกโต๊ะใหม่อีกครั้ง' })
+            return res.status(409).json({
+                error: 'หมดเวลาในการจองโต๊ะ ระบบได้คืนโต๊ะแล้ว กรุณาเลือกโต๊ะใหม่อีกครั้ง',
+                code: 'HOLD_EXPIRED',
+                missingTableIds: error.missingTableIds || []
+            })
         }
         // Two concurrent requests shared an idempotency key — the other one won.
         // Replay its result instead of surfacing a duplicate-key error.

@@ -64,6 +64,11 @@ export default class BookingList {
         client.get('/special-dates').catch(() => []),
       ]);
 
+      // SSE-triggered refreshes swap the whole list out from under the admin; put
+      // the viewport back where it was so live updates don't yank them to the top.
+      const scrollX = window.scrollX;
+      const scrollY = window.scrollY;
+
       this.bookings = bookings;
       this.container = container;
       this.specialDateNames = new Map(
@@ -300,6 +305,7 @@ export default class BookingList {
       `;
 
       this.attachEvents(container);
+      window.scrollTo(scrollX, scrollY);
     } catch (error) {
       container.innerHTML = `<p class="error">โหลดข้อมูลผิดพลาด: ${esc(error.message)}</p>`;
     }

@@ -26,7 +26,12 @@ const client = {
 
             if (!response.ok) {
                 const errorMsg = data.details ? `${data.error}: ${data.details}` : (data.error || 'Something went wrong');
-                throw new Error(errorMsg);
+                const error = new Error(errorMsg);
+                // Machine-readable fields (code, missingTableIds, …) ride along so
+                // callers don't have to string-match Thai messages.
+                error.status = response.status;
+                error.data = data;
+                throw error;
             }
 
             return data;

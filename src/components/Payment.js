@@ -6,6 +6,17 @@ export default class Payment {
     this.depositPercent = 100;
   }
 
+  // The night being paid for, spelled out so a date that silently drifted (e.g. an
+  // event link losing its ?date= on re-entry) is caught by the customer here, before
+  // any money moves.
+  formatBookingNight() {
+    const raw = this.reservation.bookingDate;
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(raw || '')) return 'คืนนี้';
+    return new Date(raw + 'T00:00:00').toLocaleDateString('th-TH', {
+      weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',
+    });
+  }
+
   render(container) {
     const { zone, extraTable, specialDate } = this.reservation;
 
@@ -73,6 +84,13 @@ export default class Payment {
         <div class="resp-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: var(--spacing-xl); align-items: start;">
           <div class="glass-card" style="padding: var(--spacing-xl);">
             <h2 class="font-heading" style="margin-bottom: var(--spacing-md); font-size: 2rem;">ชำระเงิน / Payment</h2>
+            <div style="margin-bottom: var(--spacing-md); padding: 12px 16px; background: rgba(255,255,255,0.04); border: 1px solid var(--glass-border); border-radius: var(--radius-md); display: flex; align-items: center; gap: 10px;">
+              <i data-lucide="calendar-check" style="width: 18px; height: 18px; color: var(--accent-gold); flex-shrink: 0;"></i>
+              <div>
+                <div style="font-size: 0.72rem; color: var(--text-muted); font-weight: 600;">จองสำหรับคืนวันที่</div>
+                <div style="font-weight: 800; font-size: 1.05rem;">${this.formatBookingNight()}</div>
+              </div>
+            </div>
             ${priceNote ? `
               <div style="margin-bottom: var(--spacing-lg); padding: var(--spacing-md); background: rgba(124, 58, 237, 0.15); border: 2px solid var(--primary); border-radius: var(--radius-md); font-weight: 600;">
                 ${priceNote}
